@@ -106,7 +106,7 @@ pub fn ConvolutionalLayer(comptime T: type) type {
                 self.input.deinit();
             }
 
-            //std.debug.print("\nConvolutionalLayer resources deallocated.\n", .{});
+            //std.log.debug("\nConvolutionalLayer resources deallocated.\n", .{});
         }
 
         /// Forward pass of the convolutional layer
@@ -120,7 +120,7 @@ pub fn ConvolutionalLayer(comptime T: type) type {
             self.input = try input.copy();
 
             // Perform convolution operation
-            self.output = try TensMath.CPU_convolve_tensors_with_bias(T, T, &self.input, &self.weights, &self.bias);
+            self.output = try TensMath.CPU_convolve_tensors_with_bias(T, T, self.allocator, &self.input, &self.weights, &self.bias);
             //self.output.info();
 
             return self.output;
@@ -140,20 +140,20 @@ pub fn ConvolutionalLayer(comptime T: type) type {
 
             // Compute gradients with respect to biases
             // Sum over the spatial dimensions
-            self.b_gradients = TensMath.convolution_backward_biases(T, dValues) catch |err| {
-                std.debug.print("Error during conv backward_biases {any}", .{err});
+            self.b_gradients = TensMath.convolution_backward_biases(T, self.allocator, dValues) catch |err| {
+                std.log.debug("Error during conv backward_biases {any}", .{err});
                 return err;
             };
 
             // Compute gradients with respect to weights
-            self.w_gradients = TensMath.convolution_backward_weights(T, &self.input, dValues) catch |err| {
-                std.debug.print("Error during conv backward_weights {any}", .{err});
+            self.w_gradients = TensMath.convolution_backward_weights(T, self.allocator, &self.input, dValues) catch |err| {
+                std.log.debug("Error during conv backward_weights {any}", .{err});
                 return err;
             };
 
             // Compute gradients with respect to input
-            var dInput = TensMath.convolution_backward_input(T, dValues, &self.weights) catch |err| {
-                std.debug.print("Error during conv backward_input {any}", .{err});
+            var dInput = TensMath.convolution_backward_input(T, self.allocator, dValues, &self.weights) catch |err| {
+                std.log.debug("Error during conv backward_input {any}", .{err});
                 return err;
             };
             _ = &dInput;

@@ -35,15 +35,15 @@ pub fn Model(comptime T: type) type {
         /// the layer array and input tensor memory.
         pub fn deinit(self: *@This()) void {
             for (self.layers.items, 0..) |*layer_, i| {
-                std.debug.print("\n deinitializing layer {} ... ", .{i});
+                std.log.debug("\n deinitializing layer {} ... ", .{i});
                 layer_.deinit();
-                std.debug.print("->  layer {} deinitialized", .{i});
+                std.log.debug("->  layer {} deinitialized", .{i});
             }
             self.layers.deinit();
-            std.debug.print("\n -.-.-> model layers deinitialized", .{});
+            std.log.debug("\n -.-.-> model layers deinitialized", .{});
 
             self.input_tensor.deinit(); // pay attention! input_tensor is initialised only if forward() is run at leas once. Sess self.forward()
-            std.debug.print("\n -.-.-> model input_tensor deinitialized", .{});
+            std.log.debug("\n -.-.-> model input_tensor deinitialized", .{});
         }
 
         /// Adds a new layer to the model.
@@ -72,7 +72,7 @@ pub fn Model(comptime T: type) type {
             self.input_tensor = try input.copy();
 
             for (0..self.layers.items.len) |i| {
-                std.debug.print("\n--------------------------------------forwarding layer {}", .{i});
+                std.log.debug("\n--------------------------------------forwarding layer {}", .{i});
                 if (self.layers.items[i].layer_type != layer.LayerType.ActivationLayer) try DataProc.normalize(T, self.getPrevOut(i), NormalizType.UnityBasedNormalizartion);
                 _ = try self.layers.items[i].forward(self.getPrevOut(i));
                 //self.layers.items[i].printLayer(0);
@@ -98,7 +98,7 @@ pub fn Model(comptime T: type) type {
 
             var counter = self.layers.items.len - 1;
             while (counter >= 0) : (counter -= 1) {
-                std.debug.print("\n--------------------------------------backwarding layer {}", .{counter});
+                std.log.debug("\n--------------------------------------backwarding layer {}", .{counter});
                 if (counter != self.layers.items.len - 1) grad_ptr.deinit();
                 grad_ptr = try self.layers.items[counter].backward(&grad_duplicate);
 

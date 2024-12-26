@@ -55,7 +55,7 @@ pub fn PoolingLayer(comptime T: type) type {
             self.stride = argsStruct.stride;
             self.poolingType = argsStruct.poolingType;
 
-            std.debug.print("\nInit Pooling Layer", .{});
+            std.log.debug("\nInit Pooling Layer", .{});
 
             // Only 2D supported
             if (self.kernel.len != 2 or self.stride.len != 2) {
@@ -89,7 +89,7 @@ pub fn PoolingLayer(comptime T: type) type {
                 self.used_input.deinit();
             }
 
-            std.debug.print("\nPooling layer resources deallocated.", .{});
+            std.log.debug("\nPooling layer resources deallocated.", .{});
         }
 
         /// Forward pass of the pooling layer
@@ -116,7 +116,7 @@ pub fn PoolingLayer(comptime T: type) type {
 
             for (self.used_input.data) |*v| v.* = 0;
 
-            self.output = try TensMath.pool_tensor(T, &self.input, &self.used_input, &self.kernel, &self.stride, self.poolingType);
+            self.output = try TensMath.pool_tensor(T, self.allocator, &self.input, &self.used_input, &self.kernel, &self.stride, self.poolingType);
 
             return self.output;
         }
@@ -188,34 +188,34 @@ pub fn PoolingLayer(comptime T: type) type {
         pub fn printLayer(ctx: *anyopaque, choice: u8) void {
             const self: *Self = @ptrCast(@alignCast(ctx));
 
-            std.debug.print("\n ************************Pooling layer*********************", .{});
-            std.debug.print("\n kernel: {any}  stride:{any}", .{ self.kernel, self.stride });
+            std.log.debug("\n ************************Pooling layer*********************", .{});
+            std.log.debug("\n kernel: {any}  stride:{any}", .{ self.kernel, self.stride });
             if (choice == 0) {
-                std.debug.print("\n \n************input", .{});
+                std.log.debug("\n \n************input", .{});
                 self.input.printMultidim();
-                std.debug.print("\n \n************output", .{});
+                std.log.debug("\n \n************output", .{});
                 self.output.printMultidim();
             }
             if (choice == 1) {
-                std.debug.print("\n   input: [", .{});
+                std.log.debug("\n   input: [", .{});
                 for (0..self.input.shape.len) |i| {
-                    std.debug.print("{}", .{self.input.shape[i]});
+                    std.log.debug("{}", .{self.input.shape[i]});
                     if (i == self.input.shape.len - 1) {
-                        std.debug.print("]", .{});
+                        std.log.debug("]", .{});
                     } else {
-                        std.debug.print(" x ", .{});
+                        std.log.debug(" x ", .{});
                     }
                 }
-                std.debug.print("\n   output: [", .{});
+                std.log.debug("\n   output: [", .{});
                 for (0..self.output.shape.len) |i| {
-                    std.debug.print("{}", .{self.output.shape[i]});
+                    std.log.debug("{}", .{self.output.shape[i]});
                     if (i == self.output.shape.len - 1) {
-                        std.debug.print("]", .{});
+                        std.log.debug("]", .{});
                     } else {
-                        std.debug.print(" x ", .{});
+                        std.log.debug(" x ", .{});
                     }
                 }
-                std.debug.print("\n ", .{});
+                std.log.debug("\n ", .{});
             }
         }
 

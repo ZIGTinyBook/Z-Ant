@@ -12,6 +12,11 @@ const LossType = @import("loss").LossType;
 const Trainer = @import("trainer");
 const InfoAllocator = @import("info_allocator");
 
+pub const std_options = .{
+    // Set the log level to info
+    .log_level = .debug,
+};
+
 pub fn main() !void {
     const allocator = @import("pkgAllocator").allocator;
 

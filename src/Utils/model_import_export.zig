@@ -15,13 +15,13 @@ pub fn exportModel(
     model: Model(T),
     file_path: []const u8,
 ) !void {
-    std.debug.print("\n ..... EXPORTING THE MODEL ......", .{});
+    std.log.debug("\n ..... EXPORTING THE MODEL ......", .{});
     var file = try std.fs.cwd().createFile(file_path, .{});
-    std.debug.print("\n ..... file created ......", .{});
+    std.log.debug("\n ..... file created ......", .{});
     defer file.close();
 
     const writer = file.writer();
-    std.debug.print("\n ..... writer created ......", .{});
+    std.log.debug("\n ..... writer created ......", .{});
 
     try writer.writeInt(usize, model.layers.items.len, std.builtin.Endian.big);
     for (model.layers.items) |*l| {
@@ -35,7 +35,7 @@ pub fn exportLayer(
     layer: Layer.Layer(T),
     writer: std.fs.File.Writer,
 ) !void {
-    std.debug.print("\n ... export layer... ", .{});
+    std.log.debug("\n ... export layer... ", .{});
 
     //TODO: handle Default layer and null layer
     if (layer.layer_type == LayerType.DenseLayer) {
@@ -54,7 +54,7 @@ pub fn exportLayerDense(
     layer: DenseLayer(T),
     writer: std.fs.File.Writer,
 ) !void {
-    std.debug.print(" dense ", .{});
+    std.log.debug(" dense ", .{});
 
     try exportTensor(T, layer.weights, writer);
     try exportTensor(T, layer.bias, writer);
@@ -69,7 +69,7 @@ pub fn exportLayerActivation(
     layer: ActivationLayer(T),
     writer: std.fs.File.Writer,
 ) !void {
-    std.debug.print(" activation ", .{});
+    std.log.debug(" activation ", .{});
 
     try writer.writeInt(usize, layer.n_inputs, std.builtin.Endian.big);
     try writer.writeInt(usize, layer.n_neurons, std.builtin.Endian.big);
@@ -90,7 +90,7 @@ pub fn exportTensor(
     tensor: Tensor(T),
     writer: std.fs.File.Writer,
 ) !void {
-    std.debug.print("\n ... export tensor... ", .{});
+    std.log.debug("\n ... export tensor... ", .{});
 
     // Write tensor size and shape
     try writer.writeInt(usize, tensor.size, std.builtin.Endian.big);
@@ -116,19 +116,62 @@ pub fn writeNumber(
 }
 
 // ----------------- Import -----------------
+
+pub fn importModelFromPointer(
+    comptime T: type,
+    allocator: *const std.mem.Allocator,
+    model_buffer: []const u8,
+) !Model(T) {
+    const MemoryReader = struct {
+        const Self = @This();
+
+        index: usize,
+        contents: []const u8,
+
+        fn readFn(context: *Self, buffer: []u8) error{}!usize {
+            const available = context.contents.len - context.index;
+            const len = if (buffer.len > available) available else buffer.len;
+            @memcpy(buffer, context.contents[context.index .. context.index + len]);
+            context.index += len;
+            return len;
+        }
+    };
+
+    var memory_reader = MemoryReader{
+        .index = 0,
+        .contents = model_buffer,
+    };
+    const reader = std.io.GenericReader(*MemoryReader, error{}, MemoryReader.readFn){ .context = &memory_reader };
+
+    var model: Model(T) = Model(T){
+        .layers = undefined,
+        .allocator = allocator,
+        .input_tensor = undefined,
+    };
+    try model.init();
+
+    const n_layers = try reader.readInt(usize, std.builtin.Endian.big);
+    for (0..n_layers) |_| {
+        const newLayer: Layer.Layer(T) = try importLayer(T, allocator, reader);
+
+        try model.addLayer(newLayer);
+    }
+    return model;
+}
+
 pub fn importModel(
     comptime T: type,
-    comptime allocator: *const std.mem.Allocator,
+    allocator: *const std.mem.Allocator,
     file_path: []const u8,
 ) !Model(T) {
-    std.debug.print("\n ..... IMPORTING THE MODEL ......", .{});
+    std.log.debug("\n ..... IMPORTING THE MODEL ......", .{});
 
     var file = try std.fs.cwd().openFile(file_path, .{});
-    std.debug.print("\n ..... file created ......", .{});
+    std.log.debug("\n ..... file created ......", .{});
 
     defer file.close();
     const reader = file.reader();
-    std.debug.print("\n ..... reader created ......", .{});
+    std.log.debug("\n ..... reader created ......", .{});
 
     var model: Model(T) = Model(T){
         .layers = undefined,
@@ -148,14 +191,14 @@ pub fn importModel(
 
 pub fn importLayer(
     comptime T: type,
-    comptime allocator: *const std.mem.Allocator,
-    reader: std.fs.File.Reader,
+    allocator: *const std.mem.Allocator,
+    reader: anytype, // TODO: should be an AnyReader eventually
 ) !Layer.Layer(T) {
-    std.debug.print("\n ... import layer... ", .{});
+    std.log.debug("\n ... import layer... ", .{});
 
     var layer_type_string: [10]u8 = undefined;
     _ = try reader.read(&layer_type_string);
-    std.debug.print("{s}", .{layer_type_string});
+    std.log.debug("{s}", .{layer_type_string});
 
     //TODO: handle Default layer and null layer
     if (std.mem.eql(u8, &layer_type_string, "Dense.....")) {
@@ -180,8 +223,8 @@ pub fn importLayer(
 
 pub fn importLayerDense(
     comptime T: type,
-    comptime allocator: *const std.mem.Allocator,
-    reader: std.fs.File.Reader,
+    allocator: *const std.mem.Allocator,
+    reader: anytype,
 ) !DenseLayer(T) {
     const weights_tens: Tensor(T) = try importTensor(T, allocator, reader);
     const bias_tens: Tensor(T) = try importTensor(T, allocator, reader);
@@ -205,8 +248,8 @@ pub fn importLayerDense(
 
 pub fn importLayerActivation(
     comptime T: type,
-    comptime allocator: *const std.mem.Allocator,
-    reader: std.fs.File.Reader,
+    allocator: *const std.mem.Allocator,
+    reader: anytype,
 ) !ActivationLayer(T) {
     const n_inputs = try reader.readInt(usize, std.builtin.Endian.big);
     const n_neurons = try reader.readInt(usize, std.builtin.Endian.big);
@@ -239,9 +282,9 @@ pub fn importLayerActivation(
 pub fn importTensor(
     comptime T: type,
     allocator: *const std.mem.Allocator,
-    reader: std.fs.File.Reader,
+    reader: anytype,
 ) !Tensor(T) {
-    std.debug.print("\n ... import tensor... ", .{});
+    std.log.debug("\n ... import tensor... ", .{});
 
     // Read tensor size
     const tensor_size: usize = try reader.readInt(usize, std.builtin.Endian.big);
@@ -271,7 +314,7 @@ pub fn importTensor(
 
 inline fn readNumber(
     comptime T: type,
-    reader: std.fs.File.Reader,
+    reader: anytype,
 ) !T {
     const size = @sizeOf(T);
     var buffer: [size]u8 = undefined;

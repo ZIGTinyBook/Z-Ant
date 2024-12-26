@@ -44,7 +44,7 @@ pub fn ActivationLayer(comptime T: type) type {
             const argsStruct: *const struct { n_inputs: usize, n_neurons: usize } = @ptrCast(@alignCast(args));
             const n_inputs = argsStruct.n_inputs;
             const n_neurons = argsStruct.n_neurons;
-            std.debug.print("\nInit ActivationLayer: n_inputs = {}, n_neurons = {}, Type = {}", .{ n_inputs, n_neurons, @TypeOf(T) });
+            std.log.debug("\nInit ActivationLayer: n_inputs = {}, n_neurons = {}, Type = {}", .{ n_inputs, n_neurons, @TypeOf(T) });
 
             self.allocator = alloc;
 
@@ -70,7 +70,7 @@ pub fn ActivationLayer(comptime T: type) type {
             if (self.input.data.len > 0) {
                 self.input.deinit();
             }
-            std.debug.print("\nActivationLayer resources deallocated.", .{});
+            std.log.debug("\nActivationLayer resources deallocated.", .{});
         }
 
         /// Forward pass of the layer if present it applies the activation function
@@ -95,7 +95,7 @@ pub fn ActivationLayer(comptime T: type) type {
                 try activation.forward(&self.output);
             } else if (self.activationFunction == ActivationType.Softmax) {
                 const act_type = ActivLib.ActivationFunction(T, ActivationType.Softmax);
-                var activation = act_type{};
+                var activation = act_type{ .allocator = self.allocator };
                 try activation.forward(&self.output);
             } else if (self.activationFunction == ActivationType.Sigmoid) {
                 const act_type = ActivLib.ActivationFunction(T, ActivationType.Sigmoid);
@@ -117,7 +117,7 @@ pub fn ActivationLayer(comptime T: type) type {
                 try activation.derivate(dValues, &self.output);
             } else if (self.activationFunction == ActivationType.Softmax) {
                 const act_type = ActivLib.ActivationFunction(T, ActivationType.Softmax);
-                var activation = act_type{};
+                var activation = act_type{ .allocator = self.allocator };
                 try activation.derivate(dValues, &self.output);
             } else if (self.activationFunction == ActivationType.Sigmoid) {
                 const act_type = ActivLib.ActivationFunction(T, ActivationType.Sigmoid);
@@ -131,29 +131,29 @@ pub fn ActivationLayer(comptime T: type) type {
         ///Print the layer used for debug purposes it has 2 different verbosity levels
         pub fn printLayer(ctx: *anyopaque, choice: u8) void {
             const self: *Self = @ptrCast(@alignCast(ctx));
-            std.debug.print("\n ************************Activation layer*********************", .{});
+            std.log.debug("\n ************************Activation layer*********************", .{});
             //MENU choice:
             // 0 -> full details layer
             // 1 -> shape schema
             if (choice == 0) {
-                std.debug.print("\n neurons:{}  inputs:{}", .{ self.n_neurons, self.n_inputs });
-                std.debug.print("\n \n************input", .{});
+                std.log.debug("\n neurons:{}  inputs:{}", .{ self.n_neurons, self.n_inputs });
+                std.log.debug("\n \n************input", .{});
                 self.input.printMultidim();
-                std.debug.print("\n \n************output", .{});
+                std.log.debug("\n \n************output", .{});
                 self.output.printMultidim();
-                std.debug.print("\n \n************activation function", .{});
-                std.debug.print("\n  {any}", .{self.activationFunction});
+                std.log.debug("\n \n************activation function", .{});
+                std.log.debug("\n  {any}", .{self.activationFunction});
             }
             if (choice == 1) {
-                std.debug.print("\n   input         activation     output", .{});
-                std.debug.print("\n [{} x {}]   ->  {any}     = [{} x {}] ", .{
+                std.log.debug("\n   input         activation     output", .{});
+                std.log.debug("\n [{} x {}]   ->  {any}     = [{} x {}] ", .{
                     self.input.shape[0],
                     self.input.shape[1],
                     self.activationFunction,
                     self.output.shape[0],
                     self.output.shape[1],
                 });
-                std.debug.print("\n ", .{});
+                std.log.debug("\n ", .{});
             }
         }
 

@@ -95,28 +95,25 @@ pub fn Sigmoid(comptime T: anytype) type {
     };
 }
 
-const pkg_allocator = @import("pkgAllocator").allocator;
-
 /// The Softmax activation function is used in multi-class classification tasks to convert
 /// logits (raw output values) into probabilities that sum to 1.
 /// Ideal for output layers in multi-class neural networks.
 pub fn Softmax(comptime T: anytype) type {
     return struct {
+        allocator: *const std.mem.Allocator,
+
         const Self = @This();
         //it directly modify the input tensor
         pub fn forward(self: *Self, input: *Tensor(T)) !void {
-            _ = self;
-            const allocator = pkg_allocator;
-
-            const location = try allocator.alloc(usize, input.shape.len);
-            defer allocator.free(location);
+            const location = try self.allocator.alloc(usize, input.shape.len);
+            defer self.allocator.free(location);
 
             //fill starting location to all zeros
             for (0..input.shape.len) |i| {
                 location[i] = 0;
             }
 
-            //try compute_mutidim_softmax(input, 0, location);
+            //try self.compute_mutidim_softmax(input, 0, location);
             try compute_2D_softmax(input);
         }
 
@@ -145,14 +142,13 @@ pub fn Softmax(comptime T: anytype) type {
         }
 
         //TODO: now scan the rows of the matrix, it must scan the columns
-        fn compute_mutidim_softmax(input: *Tensor(T), current_depth: usize, location: []usize) !void {
+        fn compute_mutidim_softmax(self: *Self, input: *Tensor(T), current_depth: usize, location: []usize) !void {
             if (current_depth == (input.shape.len - 1)) {
                 //declaring res as the result of the sum of the MSE
-                const allocator = pkg_allocator;
 
                 //get location is used just to manage the gets and sets relative to the current depth
-                const get_location = try allocator.alloc(usize, location.len);
-                defer allocator.free(get_location);
+                const get_location = try self.allocator.alloc(usize, location.len);
+                defer self.allocator.free(get_location);
                 //initializing get location to the same values of location
                 for (0..get_location.len) |i| {
                     get_location[i] = location[i];
@@ -187,7 +183,7 @@ pub fn Softmax(comptime T: anytype) type {
                     //std.debug.print("\n depth: {} element_at_current_depth: {}", .{ current_depth, element_at_current_depth });
                     location[current_depth] = element_at_current_depth;
                     //otherwise I have to go deeper
-                    try compute_mutidim_softmax(
+                    try self.compute_mutidim_softmax(
                         input,
                         current_depth + 1,
                         location,

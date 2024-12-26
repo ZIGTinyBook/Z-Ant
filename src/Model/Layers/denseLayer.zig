@@ -54,7 +54,7 @@ pub fn DenseLayer(comptime T: type) type {
             const n_inputs = argsStruct.n_inputs;
             const n_neurons = argsStruct.n_neurons;
 
-            std.debug.print("\nInit DenseLayer: n_inputs = {}, n_neurons = {}, Type = {}", .{ n_inputs, n_neurons, @TypeOf(T) });
+            std.log.debug("\nInit DenseLayer: n_inputs = {}, n_neurons = {}, Type = {}", .{ n_inputs, n_neurons, @TypeOf(T) });
 
             //check on parameters
             if (n_inputs <= 0 or n_neurons <= 0) return LayerError.InvalidParameters;
@@ -67,7 +67,7 @@ pub fn DenseLayer(comptime T: type) type {
             var bias_shape: [1]usize = [_]usize{n_neurons};
             self.allocator = alloc;
 
-            //std.debug.print("Generating random weights...\n", .{});
+            //std.log.debug("Generating random weights...\n", .{});
             const weight_matrix = try Layer.randn(T, self.allocator, n_inputs, n_neurons);
             defer self.allocator.free(weight_matrix);
             const bias_matrix = try Layer.randn(T, self.allocator, 1, n_neurons);
@@ -86,7 +86,7 @@ pub fn DenseLayer(comptime T: type) type {
         pub fn deinit(ctx: *anyopaque) void {
             const self: *Self = @ptrCast(@alignCast(ctx));
 
-            //std.debug.print("Deallocating DenseLayer resources...\n", .{});
+            //std.log.debug("Deallocating DenseLayer resources...\n", .{});
 
             // Dealloc tensors of weights, bias and output if allocated
             if (self.weights.data.len > 0) {
@@ -113,7 +113,7 @@ pub fn DenseLayer(comptime T: type) type {
                 self.input.deinit();
             }
 
-            std.debug.print("\nDenseLayer resources deallocated.", .{});
+            std.log.debug("\nDenseLayer resources deallocated.", .{});
         }
 
         ///Forward pass of the layer if present it applies the activation function
@@ -132,8 +132,8 @@ pub fn DenseLayer(comptime T: type) type {
                 self.output.deinit();
             }
 
-            self.output = try TensMath.compute_dot_product(T, &self.input, &self.weights);
-            try TensMath.add_bias(T, &self.output, &self.bias);
+            self.output = try TensMath.compute_dot_product(T, self.allocator, &self.input, &self.weights);
+            try TensMath.add_bias(T, self.allocator, &self.output, &self.bias);
 
             return self.output;
         }
@@ -149,7 +149,7 @@ pub fn DenseLayer(comptime T: type) type {
             defer input_transposed.deinit();
 
             self.w_gradients.deinit();
-            self.w_gradients = try TensMath.dot_product_tensor(Architectures.CPU, T, T, &input_transposed, dValues);
+            self.w_gradients = try TensMath.dot_product_tensor(Architectures.CPU, T, T, self.allocator, &input_transposed, dValues);
             // 3. Compute bias gradients (b_gradients)
             // Equivalent of np.sum(dL_dOutput, axis=0, keepdims=True)
             var sum: T = 0;
@@ -166,7 +166,7 @@ pub fn DenseLayer(comptime T: type) type {
             var weights_transposed = try self.weights.transpose2D();
             defer weights_transposed.deinit();
 
-            var dL_dInput: tensor.Tensor(T) = try TensMath.dot_product_tensor(Architectures.CPU, T, T, dValues, &weights_transposed);
+            var dL_dInput: tensor.Tensor(T) = try TensMath.dot_product_tensor(Architectures.CPU, T, T, self.allocator, dValues, &weights_transposed);
             _ = &dL_dInput;
             return dL_dInput;
         }
@@ -175,29 +175,29 @@ pub fn DenseLayer(comptime T: type) type {
         pub fn printLayer(ctx: *anyopaque, choice: u8) void {
             const self: *Self = @ptrCast(@alignCast(ctx));
 
-            std.debug.print("\n ************************Dense layer*********************", .{});
+            std.log.debug("\n ************************Dense layer*********************", .{});
             //MENU choice:
             // 0 -> full details layer
             // 1 -> shape schema
             if (choice == 0) {
-                std.debug.print("\n neurons:{}  inputs:{}", .{ self.n_neurons, self.n_inputs });
-                std.debug.print("\n \n************input", .{});
+                std.log.debug("\n neurons:{}  inputs:{}", .{ self.n_neurons, self.n_inputs });
+                std.log.debug("\n \n************input", .{});
                 self.input.printMultidim();
 
-                std.debug.print("\n \n************weights", .{});
+                std.log.debug("\n \n************weights", .{});
                 self.weights.printMultidim();
-                std.debug.print("\n \n************bias", .{});
-                std.debug.print("\n {any}", .{self.bias.data});
-                std.debug.print("\n \n************output", .{});
+                std.log.debug("\n \n************bias", .{});
+                std.log.debug("\n {any}", .{self.bias.data});
+                std.log.debug("\n \n************output", .{});
                 self.output.printMultidim();
-                std.debug.print("\n \n************w_gradients", .{});
+                std.log.debug("\n \n************w_gradients", .{});
                 self.w_gradients.printMultidim();
-                std.debug.print("\n \n************b_gradients", .{});
-                std.debug.print("\n {any}", .{self.b_gradients.data});
+                std.log.debug("\n \n************b_gradients", .{});
+                std.log.debug("\n {any}", .{self.b_gradients.data});
             }
             if (choice == 1) {
-                std.debug.print("\n   input       weight   bias  output", .{});
-                std.debug.print("\n [{} x {}] * [{} x {}] + {} = [{} x {}] ", .{
+                std.log.debug("\n   input       weight   bias  output", .{});
+                std.log.debug("\n [{} x {}] * [{} x {}] + {} = [{} x {}] ", .{
                     self.input.shape[0],
                     self.input.shape[1],
                     self.weights.shape[0],
@@ -206,7 +206,7 @@ pub fn DenseLayer(comptime T: type) type {
                     self.output.shape[0],
                     self.output.shape[1],
                 });
-                std.debug.print("\n ", .{});
+                std.log.debug("\n ", .{});
             }
         }
 

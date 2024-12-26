@@ -7,9 +7,15 @@ pub fn build(b: *std.Build) void {
     const build_options = b.addOptions();
     build_options.addOption(bool, "trace_allocator", b.option(bool, "trace_allocator", "Use a tracing allocator") orelse true);
     build_options.addOption([]const u8, "allocator", (b.option([]const u8, "allocator", "Allocator to use") orelse "raw_c_allocator"));
+    build_options.addOption(?[]const u8, "model", (b.option([]const u8, "model", "Model binary")));
 
     // Set target options, such as architecture and OS.
     const target = b.standardTargetOptions(.{});
+    //const target = b.standardTargetOptions(.{ .default_target = .{
+    //.cpu_arch = .thumb,
+    //.os_tag = .freestanding,
+    //.cpu_model = .{ .explicit = &std.Target.arm.cpu.cortex_m0plus },
+    //} });
 
     // Set optimization level (debug, release, etc.).
     const optimize = b.standardOptimizeOption(.{});
@@ -186,6 +192,39 @@ pub fn build(b: *std.Build) void {
     modelImportExport_mod.addImport("errorHandler", errorHandler_mod);
     modelImportExport_mod.addImport("activation_function", activation_mod);
 
+    //************************************************LIBRARY************************************************
+    const lib = b.addStaticLibrary(.{
+        .name = "Zant",
+        .root_source_file = b.path("src/lib.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+
+    lib.root_module.addAnonymousImport("model_binary", .{ .root_source_file = .{ .cwd_relative = getModelBinary(b) orelse "" } });
+
+    // Add necessary imports for the static library.
+    lib.root_module.addImport("tensor", tensor_mod);
+    lib.root_module.addImport("model", model_mod);
+    lib.root_module.addImport("layer", layer_mod);
+    lib.root_module.addImport("dataloader", dataloader_mod);
+    lib.root_module.addImport("dataprocessor", dataProcessor_mod);
+    lib.root_module.addImport("activation_function", activation_mod);
+    lib.root_module.addImport("loss", loss_mod);
+    lib.root_module.addImport("trainer", trainer_mod);
+    lib.root_module.addImport("denselayer", denseLayer_mod);
+    lib.root_module.addImport("activationlayer", activationLayer_mod);
+    lib.root_module.addImport("convLayer", convLayer_mod);
+    lib.root_module.addImport("flattenLayer", flattenLayer_mod);
+    lib.root_module.addImport("poolingLayer", poolingLayer_mod);
+    lib.root_module.addImport("pkgAllocator", allocator_mod);
+    lib.root_module.addImport("model_import_export", modelImportExport_mod);
+    lib.root_module.addOptions("build_options", build_options);
+
+    const install_lib_step = b.addInstallArtifact(lib, .{});
+
+    const lib_step = b.step("lib", "Compile static library");
+    lib_step.dependOn(&install_lib_step.step);
+
     //************************************************MAIN EXECUTABLE************************************************
 
     // Define the main executable with target architecture and optimization settings.
@@ -283,4 +322,25 @@ pub fn build(b: *std.Build) void {
     const run_unit_tests = b.addRunArtifact(unit_tests);
     const test_step = b.step("test_all", "Run all unit tests");
     test_step.dependOn(&run_unit_tests.step);
+}
+
+fn getModelBinary(b: *std.Build) ?[]const u8 {
+    // Check for a custom binary path argument
+    const args = std.process.argsAlloc(b.allocator) catch {
+        return null;
+    };
+    defer std.process.argsFree(b.allocator, args);
+
+    var binary_path: ?[]const u8 = null;
+    for (args[1..]) |arg| { // Skip the first argument (build.zig path)
+        if (std.mem.startsWith(u8, arg, "-Dmodel=")) {
+            binary_path = arg[8..]; // Extract the value after 'binary_path='
+        }
+    }
+
+    if (binary_path) |path| {
+        return std.Build.dupe(b, path);
+    } else {
+        return null;
+    }
 }

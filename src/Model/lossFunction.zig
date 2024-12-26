@@ -236,6 +236,7 @@ pub fn CCELoss() type {
             //call mutidim_mat_mul to handle multidimensionality
             try multidim_CCE(
                 T,
+                allocator,
                 predictions,
                 targets,
                 &out_tensor,
@@ -246,12 +247,10 @@ pub fn CCELoss() type {
             return out_tensor;
         }
 
-        fn multidim_CCE(comptime T: type, predictions: *Tensor(T), targets: *Tensor(T), out_tensor: *Tensor(T), current_depth: usize, location: []usize) !void {
+        fn multidim_CCE(comptime T: type, allocator: *const std.mem.Allocator, predictions: *Tensor(T), targets: *Tensor(T), out_tensor: *Tensor(T), current_depth: usize, location: []usize) !void {
             if (current_depth == (predictions.shape.len - 1)) {
                 //declaring res as the result of the sum of the MSE
                 var res: f64 = 0.0;
-
-                const allocator = @import("pkgAllocator").allocator;
 
                 const get_location = try allocator.alloc(usize, location.len);
                 defer allocator.free(get_location);
@@ -284,6 +283,7 @@ pub fn CCELoss() type {
                     location[current_depth] = element_at_current_depth;
                     try multidim_CCE(
                         T,
+                        allocator,
                         predictions,
                         targets,
                         out_tensor,

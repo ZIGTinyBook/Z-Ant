@@ -76,7 +76,7 @@ test "Dot product 2x2" {
     var t1 = try Tensor(f32).fromArray(&allocator, &inputArray, &shape);
     var t2 = try Tensor(f32).fromArray(&allocator, &inputArray, &shape);
 
-    var result_tensor = try TensMath.dot_product_tensor(Architectures.CPU, f32, f64, &t1, &t2);
+    var result_tensor = try TensMath.dot_product_tensor(Architectures.CPU, f32, f64, &allocator, &t1, &t2);
 
     try std.testing.expect(9.0 == result_tensor.data[0]);
     try std.testing.expect(12.0 == result_tensor.data[1]);
@@ -94,9 +94,9 @@ test "Error when input tensors have incompatible sizes for dot product" {
     var t1 = try Tensor(f32).fromShape(&allocator, &shape1);
     var t2 = try Tensor(f32).fromShape(&allocator, &shape2);
 
-    try std.testing.expectError(TensorMathError.InputTensorsWrongShape, TensMath.dot_product_tensor(Architectures.CPU, f32, f64, &t1, &t2));
+    try std.testing.expectError(TensorMathError.InputTensorsWrongShape, TensMath.dot_product_tensor(Architectures.CPU, f32, f64, &allocator, &t1, &t2));
 
-    _ = TensMath.dot_product_tensor(Architectures.CPU, f32, f64, &t1, &t2) catch |err| {
+    _ = TensMath.dot_product_tensor(Architectures.CPU, f32, f64, &allocator, &t1, &t2) catch |err| {
         std.debug.print("\n _______ {s} ______", .{ErrorHandler.errorDetails(err)});
     };
     t1.deinit();
@@ -112,7 +112,7 @@ test "Error when input tensors have incompatible shapes for dot product" {
     var t1 = try Tensor(f32).fromShape(&allocator, &shape1);
     var t2 = try Tensor(f32).fromShape(&allocator, &shape2);
 
-    try std.testing.expectError(TensorMathError.InputTensorsWrongShape, TensMath.dot_product_tensor(Architectures.CPU, f32, f64, &t1, &t2));
+    try std.testing.expectError(TensorMathError.InputTensorsWrongShape, TensMath.dot_product_tensor(Architectures.CPU, f32, f64, &allocator, &t1, &t2));
 
     t1.deinit();
     t2.deinit();
@@ -151,7 +151,7 @@ test "add bias" {
     var t1 = try Tensor(f32).fromArray(&allocator, &inputArray, &shape_tensor);
     var bias = try Tensor(f32).fromArray(&allocator, &bias_array, &shape_bias);
 
-    try TensMath.add_bias(f32, &t1, &bias);
+    try TensMath.add_bias(f32, &allocator, &t1, &bias);
 
     for (t1.data, 0..) |*data, i| {
         try std.testing.expect(data.* == flatArr[i] + 1);
@@ -242,7 +242,7 @@ test "Convolution 4D Input with 2x2 Kernel" {
     var input_tensor = try Tensor(f32).fromArray(&allocator, &inputArray, &input_shape);
     var kernel_tensor = try Tensor(f32).fromArray(&allocator, &kernelArray, &kernel_shape);
 
-    var result_tensor = try TensMath.CPU_convolve_tensors_with_bias(f32, f32, &input_tensor, &kernel_tensor, &bias);
+    var result_tensor = try TensMath.CPU_convolve_tensors_with_bias(f32, f32, &allocator, &input_tensor, &kernel_tensor, &bias);
 
     // Expected results with the correct dimensions
     const expected_result: [2][1][2][2]f32 = [_][1][2][2]f32{
@@ -305,7 +305,7 @@ test "Pooling 2D" {
     defer used_input1.deinit();
     for (used_input1.data) |*val| val.* = 0;
 
-    var output1: Tensor(f32) = try TensMath.pool_tensor(f32, &input1, &used_input1, &kernel1, &stride1, PoolingType.Max);
+    var output1: Tensor(f32) = try TensMath.pool_tensor(f32, &allocator, &input1, &used_input1, &kernel1, &stride1, PoolingType.Max);
     defer output1.deinit();
 
     // Same checks for output as original
@@ -372,7 +372,7 @@ test "Pooling 2D" {
     defer used_input2.deinit();
     for (used_input2.data) |*val| val.* = 0;
 
-    var output2: Tensor(f32) = try TensMath.pool_tensor(f32, &input1, &used_input2, &kernel2, &stride2, PoolingType.Max);
+    var output2: Tensor(f32) = try TensMath.pool_tensor(f32, &allocator, &input1, &used_input2, &kernel2, &stride2, PoolingType.Max);
     defer output2.deinit();
 
     try std.testing.expectEqual(output2.shape.len, input1.shape.len);
@@ -426,7 +426,7 @@ test "Pooling multidim" {
     defer used_input1.deinit();
     for (used_input1.data) |*val| val.* = 0;
 
-    var output: Tensor(f32) = try TensMath.pool_tensor(f32, &input1, &used_input1, &kernel1, &stride1, PoolingType.Max);
+    var output: Tensor(f32) = try TensMath.pool_tensor(f32, &allocator, &input1, &used_input1, &kernel1, &stride1, PoolingType.Max);
     defer output.deinit();
 
     try std.testing.expectEqual(output.shape.len, input1.shape.len);

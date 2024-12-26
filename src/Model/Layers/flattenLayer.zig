@@ -122,8 +122,8 @@ pub fn FlattenLayer(comptime T: type) type {
         pub fn printLayer(ctx: *anyopaque, choice: u8) void {
             const self: *Self = @ptrCast(@alignCast(ctx));
             switch (choice) {
-                0 => std.debug.print("Flatten Layer\n", .{}),
-                1 => std.debug.print("Input shape: {any}, Output shape: {any}\n", .{ self.input.shape, self.output.shape }),
+                0 => std.log.debug("Flatten Layer\n", .{}),
+                1 => std.log.debug("Input shape: {any}, Output shape: {any}\n", .{ self.input.shape, self.output.shape }),
                 else => {},
             }
         }

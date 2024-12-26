@@ -99,7 +99,7 @@ test "Softmax from ActivationFunction()" {
     defer t1.deinit();
 
     const soft_type = ActivFun.ActivationFunction(f32, ActivType.Softmax);
-    _ = soft_type{};
+    _ = soft_type{ .allocator = &allocator };
 }
 
 test "Softmax all positive" {
@@ -117,7 +117,7 @@ test "Softmax all positive" {
     var t1 = try Tensor(f32).fromArray(&allocator, &inputArray, &shape);
     defer t1.deinit();
 
-    var soft = ActivFun.ActivationFunction(f32, ActivType.Softmax){};
+    var soft = ActivFun.ActivationFunction(f32, ActivType.Softmax){ .allocator = &allocator };
     try soft.forward(&t1);
     //now data is:
     //{ 0.2689414,  0.7310586  }
@@ -147,7 +147,7 @@ test "Softmax all 0" {
     var t1 = try Tensor(f32).fromArray(&allocator, &inputArray, &shape);
     defer t1.deinit();
 
-    var soft = ActivFun.ActivationFunction(f32, ActivType.Softmax){};
+    var soft = ActivFun.ActivationFunction(f32, ActivType.Softmax){ .allocator = &allocator };
     try soft.forward(&t1);
 
     //t1.info();
@@ -171,7 +171,7 @@ test "Softmax derivate" {
     var t1 = try Tensor(f32).fromArray(&allocator, &inputArray, &shape);
     defer t1.deinit();
 
-    var soft = ActivFun.ActivationFunction(f32, ActivType.Softmax){};
+    var soft = ActivFun.ActivationFunction(f32, ActivType.Softmax){ .allocator = &allocator };
     try soft.forward(&t1);
     //now data is:
     //{ 0.2689414,  0.7310586  }

@@ -12,10 +12,8 @@ const TensorMathError = @import("errorHandler").TensorMathError;
 const ArchitectureError = @import("errorHandler").ArchitectureError;
 const TensorError = @import("errorHandler").TensorError;
 
-const pkg_allocator = @import("pkgAllocator").allocator;
-
 /// Function that add the bias for all the features in the tensor
-pub fn add_bias(comptime T: anytype, tensor: *Tensor(T), bias: *Tensor(T)) !void {
+pub fn add_bias(comptime T: anytype, allocator: *const std.mem.Allocator, tensor: *Tensor(T), bias: *Tensor(T)) !void {
     // Checks:
     if (tensor.size == 0) {
         return TensorError.EmptyTensor;
@@ -32,26 +30,28 @@ pub fn add_bias(comptime T: anytype, tensor: *Tensor(T), bias: *Tensor(T)) !void
     }
 
     // Allocate an array for threads, one for each row of the tensor
-    const num_threads = tensor.size / bias.size;
+    //const num_threads = tensor.size / bias.size;
 
-    var threads = try pkg_allocator.alloc(std.Thread, num_threads); //Array to save thread handles
+    //var threads = try allocator.alloc(std.Thread, num_threads); //Array to save thread handles
 
     var index: usize = 0;
     var i: usize = 0;
 
+    _ = allocator;
     // Start a thread for each row of the tensor
     while (index < tensor.size) : (i += 1) {
-        threads[i] = try std.Thread.spawn(.{}, add_bias_thread, .{ T, tensor.data, index, len, bias });
+        //threads[i] = try std.Thread.spawn(.{}, add_bias_thread, .{ T, tensor.data, index, len, bias });
+        add_bias_thread(T, tensor.data, index, len, bias);
         index += len;
     }
 
     // Merges all threads
-    for (threads) |*thread| {
-        thread.join(); // Use try to catch any errors
-    }
+    //for (threads) |*thread| {
+    //thread.join(); // Use try to catch any errors
+    //}
 
     // Free the thread array
-    pkg_allocator.free(threads);
+    //allocator.free(threads);
 }
 
 fn add_bias_thread(comptime T: anytype, array: []T, start: usize, len: usize, bias: *Tensor(T)) void {
@@ -78,11 +78,11 @@ pub fn sum_tensors(comptime arch: Architectures, comptime Tin: anytype, comptime
         Architectures.CPU => return CPU_sum_tensors(Tin, Tout, t1, t2),
 
         Architectures.GPU => {
-            std.debug.print("{} is under developement \n", .{arch});
+            std.log.debug("{} is under developement \n", .{arch});
             return ArchitectureError.UnderDevelopementArchitecture;
         },
         Architectures.SP32 => {
-            std.debug.print("{} is under developement \n", .{arch});
+            std.log.debug("{} is under developement \n", .{arch});
             return ArchitectureError.UnderDevelopementArchitecture;
         },
         else => return ArchitectureError.UnknownArchitecture,
@@ -131,27 +131,27 @@ fn CPU_sum_tensors(comptime inputType: anytype, comptime outputType: anytype, t1
 
 /// Returns the dot product of two tensors. The dot product is the sum of the products of the corresponding entries of the two sequences of numbers.
 /// Deprecated: use dot_product_tensor instead
-pub fn compute_dot_product(comptime T: type, input: *Tensor(T), weights: *Tensor(T)) !Tensor(T) {
-    return try CPU_dot_product_tensors(T, T, input, weights);
+pub fn compute_dot_product(comptime T: type, allocator: *const std.mem.Allocator, input: *Tensor(T), weights: *Tensor(T)) !Tensor(T) {
+    return try CPU_dot_product_tensors(T, T, allocator, input, weights);
 }
 
 /// Returns the dot product of two tensors. The dot product is the sum of the products of the corresponding entries of the two sequences of numbers.
-pub fn dot_product_tensor(comptime arch: Architectures, comptime Tin: anytype, comptime Tout: anytype, t1: *Tensor(Tin), t2: *Tensor(Tin)) !Tensor(Tout) {
+pub fn dot_product_tensor(comptime arch: Architectures, comptime Tin: anytype, comptime Tout: anytype, allocator: *const std.mem.Allocator, t1: *Tensor(Tin), t2: *Tensor(Tin)) !Tensor(Tout) {
     return switch (arch) {
-        Architectures.CPU => return CPU_dot_product_tensors(Tin, Tout, t1, t2),
+        Architectures.CPU => return CPU_dot_product_tensors(Tin, Tout, allocator, t1, t2),
         Architectures.GPU => {
-            std.debug.print("{} is under development\n", .{arch});
+            std.log.debug("{} is under development\n", .{arch});
             return ArchitectureError.UnderDevelopmentArchitecture;
         },
         Architectures.SP32 => {
-            std.debug.print("{} is under development\n", .{arch});
+            std.log.debug("{} is under development\n", .{arch});
             return ArchitectureError.UnderDevelopmentArchitecture;
         },
         else => return ArchitectureError.UnknownArchitecture,
     };
 }
 /// Implementation of dot product for CPU architecture still not parallelized
-pub fn CPU_dot_product_tensors(comptime inputType: anytype, comptime outputType: anytype, t1: *Tensor(inputType), t2: *Tensor(inputType)) !Tensor(outputType) {
+pub fn CPU_dot_product_tensors(comptime inputType: anytype, comptime outputType: anytype, allocator: *const std.mem.Allocator, t1: *Tensor(inputType), t2: *Tensor(inputType)) !Tensor(outputType) {
 
     //CHECKS :
     const nDimT1 = t1.shape.len; //number of dimesion of tensor 1
@@ -194,9 +194,8 @@ pub fn CPU_dot_product_tensors(comptime inputType: anytype, comptime outputType:
     }
 
     //CREATING output_tensor :
-    const allocator = pkg_allocator;
     var out_shape = try allocator.alloc(usize, nDimT1); //I had to use alloc() bacause nDimT1 is not known at comptime
-    defer pkg_allocator.free(out_shape);
+    defer allocator.free(out_shape);
     //defining the resulting shape
     for (0..(nDimT1 - 2)) |i| {
         out_shape[i] = t1.shape[i];
@@ -204,11 +203,11 @@ pub fn CPU_dot_product_tensors(comptime inputType: anytype, comptime outputType:
     out_shape[nDimT1 - 2] = t1.shape[nDimT1 - 2];
     out_shape[nDimT1 - 1] = t2.shape[nDimT1 - 1];
 
-    var out_tensor = try Tensor(outputType).fromShape(&pkg_allocator, out_shape);
+    var out_tensor = try Tensor(outputType).fromShape(allocator, out_shape);
     try out_tensor.set(0, 0);
     //initialize the current location to all 0
-    const location = try pkg_allocator.alloc(usize, nDimT1);
-    defer pkg_allocator.free(location);
+    const location = try allocator.alloc(usize, nDimT1);
+    defer allocator.free(location);
     for (location) |*loc| {
         loc.* = 0;
     }
@@ -270,7 +269,7 @@ fn multidim_multiplication(comptime inputType: anytype, comptime outputType: any
     } else {
         for (0..t1.shape[current_depth]) |element_at_current_depth| {
             //print location:
-            //std.debug.print("\n depth: {} element_at_current_depth: {}", .{ current_depth, element_at_current_depth });
+            //std.log.debug("\n depth: {} element_at_current_depth: {}", .{ current_depth, element_at_current_depth });
             location[current_depth] = element_at_current_depth;
             //otherwise I have to go deeper
             try multidim_multiplication(
@@ -288,15 +287,15 @@ fn multidim_multiplication(comptime inputType: anytype, comptime outputType: any
 
 // CONVOLVE -----------------------------------------------------------------------------------------------------------------------
 
-pub fn convolve_tensor(comptime arch: Architectures, comptime Tin: anytype, comptime Tout: anytype, input: *Tensor(Tin), kernel: *Tensor(Tin)) !Tensor(Tout) {
+pub fn convolve_tensor(comptime arch: Architectures, comptime Tin: anytype, comptime Tout: anytype, allocator: *std.mem.Allocator, input: *Tensor(Tin), kernel: *Tensor(Tin)) !Tensor(Tout) {
     return switch (arch) {
-        Architectures.CPU => return CPU_convolve_tensors(Tin, Tout, input, kernel),
+        Architectures.CPU => return CPU_convolve_tensors(Tin, Tout, allocator, input, kernel),
         Architectures.GPU => {
-            std.debug.print("{} è in fase di sviluppo\n", .{arch});
+            std.log.debug("{} è in fase di sviluppo\n", .{arch});
             return ArchitectureError.UnderDevelopmentArchitecture;
         },
         Architectures.SP32 => {
-            std.debug.print("{} è in fase di sviluppo\n", .{arch});
+            std.log.debug("{} è in fase di sviluppo\n", .{arch});
             return ArchitectureError.UnderDevelopmentArchitecture;
         },
         else => return ArchitectureError.UnknownArchitecture,
@@ -304,7 +303,7 @@ pub fn convolve_tensor(comptime arch: Architectures, comptime Tin: anytype, comp
 }
 
 /// Convolution fro CPU Architecture
-pub fn CPU_convolve_tensors(comptime inputType: anytype, comptime outputType: anytype, input: *Tensor(inputType), kernel: *Tensor(inputType)) !Tensor(outputType) {
+pub fn CPU_convolve_tensors(comptime inputType: anytype, comptime outputType: anytype, allocator: *std.mem.Allocator, input: *Tensor(inputType), kernel: *Tensor(inputType)) !Tensor(outputType) {
     // CHECKS:
     const nDimInput = input.shape.len; // Dimension of the input tensor
     const nDimKernel = kernel.shape.len; // Dimension of the kernel tensor
@@ -327,18 +326,18 @@ pub fn CPU_convolve_tensors(comptime inputType: anytype, comptime outputType: an
     }
 
     // Creation of the output tensor
-    var out_shape = try pkg_allocator.alloc(usize, nDimInput);
-    defer pkg_allocator.free(out_shape);
+    var out_shape = try allocator.alloc(usize, nDimInput);
+    defer allocator.free(out_shape);
 
     for (0..nDimInput) |i| {
         out_shape[i] = input.shape[i] - kernel.shape[i] + 1;
     }
 
-    var out_tensor = try Tensor(outputType).fromShape(&pkg_allocator, out_shape);
+    var out_tensor = try Tensor(outputType).fromShape(&allocator, out_shape);
     try out_tensor.set(0, 0);
 
-    const location = try pkg_allocator.alloc(usize, nDimInput);
-    defer pkg_allocator.free(location);
+    const location = try allocator.alloc(usize, nDimInput);
+    defer allocator.free(location);
     for (location) |*loc| {
         loc.* = 0;
     }
@@ -347,6 +346,7 @@ pub fn CPU_convolve_tensors(comptime inputType: anytype, comptime outputType: an
     try multidim_convolution(
         inputType,
         outputType,
+        allocator,
         input,
         kernel,
         &out_tensor,
@@ -358,15 +358,15 @@ pub fn CPU_convolve_tensors(comptime inputType: anytype, comptime outputType: an
 }
 
 /// Function that performs the convolution of two tensors used in a recursive way to handle multidimensional tensors
-fn multidim_convolution(comptime inputType: anytype, comptime outputType: anytype, input: *Tensor(inputType), kernel: *Tensor(inputType), output: *Tensor(outputType), current_dim: usize, location: []usize) !void {
+fn multidim_convolution(comptime inputType: anytype, comptime outputType: anytype, allocator: *std.mem.Allocator, input: *Tensor(inputType), kernel: *Tensor(inputType), output: *Tensor(outputType), current_dim: usize, location: []usize) !void {
     if (current_dim == input.shape.len) {
         // Base Case: calculate in this location
 
         var sum: outputType = 0;
         const nDims = input.shape.len;
 
-        const kernel_indices = try pkg_allocator.alloc(usize, nDims);
-        const input_indices = try pkg_allocator.alloc(usize, nDims);
+        const kernel_indices = try allocator.alloc(usize, nDims);
+        const input_indices = try allocator.alloc(usize, nDims);
 
         // SUm over the kernel
         try sum_over_kernel(
@@ -383,14 +383,15 @@ fn multidim_convolution(comptime inputType: anytype, comptime outputType: anytyp
 
         try output.set_at(location, sum);
 
-        pkg_allocator.free(kernel_indices);
-        pkg_allocator.free(input_indices);
+        allocator.free(kernel_indices);
+        allocator.free(input_indices);
     } else {
         for (0..output.shape[current_dim]) |i| {
             location[current_dim] = i;
             try multidim_convolution(
                 inputType,
                 outputType,
+                allocator,
                 input,
                 kernel,
                 output,
@@ -462,6 +463,7 @@ fn sum_over_kernel(
 fn multidim_convolution_with_bias(
     comptime inputType: anytype,
     comptime outputType: anytype,
+    allocator: *const std.mem.Allocator,
     input: *Tensor(inputType),
     kernel: *Tensor(inputType),
     output: *Tensor(outputType),
@@ -472,10 +474,10 @@ fn multidim_convolution_with_bias(
     if (current_dim == output.shape.len) {
         var sum: outputType = 0;
 
-        const kernel_indices = try pkg_allocator.alloc(usize, kernel.shape.len);
-        defer pkg_allocator.free(kernel_indices);
-        const input_indices = try pkg_allocator.alloc(usize, input.shape.len);
-        defer pkg_allocator.free(input_indices);
+        const kernel_indices = try allocator.alloc(usize, kernel.shape.len);
+        defer allocator.free(kernel_indices);
+        const input_indices = try allocator.alloc(usize, input.shape.len);
+        defer allocator.free(input_indices);
 
         // Inizializza gli indici
         for (0..kernel_indices.len) |i| kernel_indices[i] = 0;
@@ -484,7 +486,7 @@ fn multidim_convolution_with_bias(
         // Imposta il batch
         input_indices[0] = location[0]; // Batch
 
-        //std.debug.print("multidim_convolution_with_bias: location: {d}, sum: {}\n", .{ location, sum });
+        //std.log.debug("multidim_convolution_with_bias: location: {d}, sum: {}\n", .{ location, sum });
 
         // Itera su tutti i canali
         for (0..kernel.shape[1]) |channel| {
@@ -510,7 +512,7 @@ fn multidim_convolution_with_bias(
         const bias_value = try bias.get_at(&bias_index);
 
         sum += bias_value; // Aggiungi il bias
-        //std.debug.print("multidim_convolution_with_bias: Adding bias. New sum: {}\n", .{sum});
+        //std.log.debug("multidim_convolution_with_bias: Adding bias. New sum: {}\n", .{sum});
 
         // Imposta il risultato nell'output
         try output.set_at(location, sum);
@@ -520,15 +522,16 @@ fn multidim_convolution_with_bias(
             location[current_dim] = i;
 
             if (location[current_dim] >= output.shape[current_dim]) {
-                std.debug.print("Error: location out of bounds: {d}, shape: {d}\n", .{ location, output.shape });
+                std.log.debug("Error: location out of bounds: {d}, shape: {d}\n", .{ location, output.shape });
                 return error.IndexOutOfBounds;
             }
 
-            //std.debug.print("multidim_convolution_with_bias: Recursing at dimension {d}, index {d}\n", .{ current_dim, i });
+            //std.log.debug("multidim_convolution_with_bias: Recursing at dimension {d}, index {d}\n", .{ current_dim, i });
 
             try multidim_convolution_with_bias(
                 inputType,
                 outputType,
+                allocator,
                 input,
                 kernel,
                 output,
@@ -544,28 +547,29 @@ fn multidim_convolution_with_bias(
 pub fn CPU_convolve_tensors_with_bias(
     comptime inputType: anytype,
     comptime outputType: anytype,
+    allocator: *const std.mem.Allocator,
     input: *Tensor(inputType),
     kernel: *Tensor(inputType),
     bias: *Tensor(outputType),
 ) !Tensor(outputType) {
-    //std.debug.print("CPU_convolve_tensors_with_bias: input shape: {d}, kernel shape: {d}\n", .{ input.shape, kernel.shape });
+    //std.log.debug("CPU_convolve_tensors_with_bias: input shape: {d}, kernel shape: {d}\n", .{ input.shape, kernel.shape });
 
     const nDimInput = input.shape.len;
     const nDimKernel = kernel.shape.len;
 
     if (nDimInput != 4 or nDimKernel != 4) {
-        std.debug.print("Error: Tensors must have 4 dimensions\n", .{});
+        std.log.debug("Error: Tensors must have 4 dimensions\n", .{});
         return TensorMathError.InputTensorDifferentShape;
     }
 
     if (input.shape[1] != kernel.shape[1]) {
-        std.debug.print("Error: Mismatched channels. Input: {d}, Kernel: {d}\n", .{ input.shape[1], kernel.shape[1] });
+        std.log.debug("Error: Mismatched channels. Input: {d}, Kernel: {d}\n", .{ input.shape[1], kernel.shape[1] });
         return TensorMathError.InputTensorsWrongShape;
     }
 
     for (2..4) |i| {
         if (kernel.shape[i] > input.shape[i]) {
-            std.debug.print("Error: Kernel larger than input in dimension {d}\n", .{i});
+            std.log.debug("Error: Kernel larger than input in dimension {d}\n", .{i});
             return TensorMathError.InputTensorsWrongShape;
         }
     }
@@ -577,9 +581,9 @@ pub fn CPU_convolve_tensors_with_bias(
         input.shape[3] - kernel.shape[3] + 1, // Width
     };
 
-    //std.debug.print("Output tensor shape: {d}\n", .{out_shape});
+    //std.log.debug("Output tensor shape: {d}\n", .{out_shape});
 
-    var out_tensor = try Tensor(outputType).fromShape(&pkg_allocator, &out_shape);
+    var out_tensor = try Tensor(outputType).fromShape(allocator, &out_shape);
     try out_tensor.set(0, 0);
 
     var location: [4]usize = [_]usize{ 0, 0, 0, 0 };
@@ -587,6 +591,7 @@ pub fn CPU_convolve_tensors_with_bias(
     try multidim_convolution_with_bias(
         inputType,
         outputType,
+        allocator,
         input,
         kernel,
         &out_tensor,
@@ -595,11 +600,11 @@ pub fn CPU_convolve_tensors_with_bias(
         &location,
     );
 
-    //std.debug.print("Result tensor data: {d}\n", .{out_tensor.data});
+    //std.log.debug("Result tensor data: {d}\n", .{out_tensor.data});
     return out_tensor;
 }
 
-pub fn convolution_backward_biases(comptime T: type, dValues: *Tensor(T)) !Tensor(T) {
+pub fn convolution_backward_biases(comptime T: type, allocator: *const std.mem.Allocator, dValues: *Tensor(T)) !Tensor(T) {
     // Compute gradients with respect to biases by summing over batch, height, and width dimensions
     // Assumes dValues shape: [batch_size, out_channels, output_height, output_width]
 
@@ -610,7 +615,7 @@ pub fn convolution_backward_biases(comptime T: type, dValues: *Tensor(T)) !Tenso
     var bias_gradients_shape = [_]usize{out_channels};
 
     // Allocate the bias_gradients tensor
-    var bias_gradients = try Tensor(T).fromShape(&pkg_allocator, &bias_gradients_shape);
+    var bias_gradients = try Tensor(T).fromShape(allocator, &bias_gradients_shape);
 
     // Initialize bias_gradients to zero
     try bias_gradients.set(0, 0);
@@ -638,7 +643,7 @@ pub fn convolution_backward_biases(comptime T: type, dValues: *Tensor(T)) !Tenso
     return bias_gradients;
 }
 
-pub fn convolution_backward_weights(comptime T: type, input: *Tensor(T), dValues: *Tensor(T)) !Tensor(T) {
+pub fn convolution_backward_weights(comptime T: type, allocator: *const std.mem.Allocator, input: *Tensor(T), dValues: *Tensor(T)) !Tensor(T) {
     // Compute gradients with respect to weights
     // Input shape: [batch_size, in_channels, input_height, input_width]
     // dValues shape: [batch_size, out_channels, output_height, output_width]
@@ -654,7 +659,7 @@ pub fn convolution_backward_weights(comptime T: type, input: *Tensor(T), dValues
     const output_height = dValues.shape[2];
     const output_width = dValues.shape[3];
 
-    std.debug.print("\n batch_size: {} in_channels: {} input_height: {} input_width: {} out_batch_size: {} out_channels: {} output_height: {} output_width: {}\n", .{ batch_size, in_channels, input_height, input_width, out_batch_size, out_channels, output_height, output_width });
+    std.log.debug("\n batch_size: {} in_channels: {} input_height: {} input_width: {} out_batch_size: {} out_channels: {} output_height: {} output_width: {}\n", .{ batch_size, in_channels, input_height, input_width, out_batch_size, out_channels, output_height, output_width });
 
     // Check for matching batch sizes
     if (batch_size != out_batch_size) return TensorMathError.InputTensorsWrongShape;
@@ -664,7 +669,7 @@ pub fn convolution_backward_weights(comptime T: type, input: *Tensor(T), dValues
     const kernel_width = input_width - output_width + 1;
 
     var w_gradients_shape = [_]usize{ out_channels, in_channels, kernel_height, kernel_width };
-    var w_gradients = try Tensor(T).fromShape(&pkg_allocator, &w_gradients_shape);
+    var w_gradients = try Tensor(T).fromShape(allocator, &w_gradients_shape);
 
     // Initialize w_gradients to zero
     try w_gradients.set(0, 0);
@@ -702,7 +707,7 @@ pub fn convolution_backward_weights(comptime T: type, input: *Tensor(T), dValues
     return w_gradients;
 }
 
-pub fn convolution_backward_input(comptime T: type, dValues: *Tensor(T), weights: *Tensor(T)) !Tensor(T) {
+pub fn convolution_backward_input(comptime T: type, allocator: *const std.mem.Allocator, dValues: *Tensor(T), weights: *Tensor(T)) !Tensor(T) {
     // Compute gradients with respect to the input
     // dValues shape: [batch_size, out_channels, output_height, output_width]
     // Weights shape: [out_channels, in_channels, kernel_height, kernel_width]
@@ -719,7 +724,7 @@ pub fn convolution_backward_input(comptime T: type, dValues: *Tensor(T), weights
     const kernel_width = weights.shape[3];
 
     if (out_channels != weight_out_channels) {
-        std.debug.print("Error: Mismatched output channels: dValues {d}, weights {d}\n", .{ out_channels, weight_out_channels });
+        std.log.debug("Error: Mismatched output channels: dValues {d}, weights {d}\n", .{ out_channels, weight_out_channels });
         return TensorMathError.InputTensorsWrongShape;
     }
 
@@ -727,44 +732,44 @@ pub fn convolution_backward_input(comptime T: type, dValues: *Tensor(T), weights
     const input_width = output_width + kernel_width - 1;
 
     var input_gradients_shape = [_]usize{ batch_size, in_channels, input_height, input_width };
-    var input_gradients = try Tensor(T).fromShape(&pkg_allocator, &input_gradients_shape);
+    var input_gradients = try Tensor(T).fromShape(allocator, &input_gradients_shape);
 
     // Initialize input_gradients to zero
     try input_gradients.set(0, 0);
 
-    std.debug.print("Backward input gradients initialized with shape: {d}\n", .{input_gradients.shape});
+    std.log.debug("Backward input gradients initialized with shape: {d}\n", .{input_gradients.shape});
 
     // Compute input gradients
     for (0..batch_size) |b| {
         for (0..in_channels) |ic| {
             var shape: [4]usize = [_]usize{ 1, 1, input_height, input_width };
-            var input_channel_gradient = try Tensor(T).fromShape(&pkg_allocator, &shape);
+            var input_channel_gradient = try Tensor(T).fromShape(allocator, &shape);
             try input_channel_gradient.set(0, 0);
 
             for (0..out_channels) |oc| {
-                //std.debug.print("Processing batch {d}, in_channel {d}, out_channel {d}\n", .{ b, ic, oc });
+                //std.log.debug("Processing batch {d}, in_channel {d}, out_channel {d}\n", .{ b, ic, oc });
 
                 // Flip weights along spatial dimensions (rotate 180 degrees)
-                var flipped_weights = try flip_kernel(T, weights, oc, ic);
+                var flipped_weights = try flip_kernel(T, allocator, weights, oc, ic);
 
                 // Slice dValues for the current batch and out_channel
                 var start_indices = [_]usize{ b, oc, 0, 0 };
                 var slice_shape = [_]usize{ 1, 1, output_height, output_width };
 
-                //std.debug.print("Slicing dValues with start indices: {d}, slice shape: {d}\n", .{ start_indices, slice_shape });
+                //std.log.debug("Slicing dValues with start indices: {d}, slice shape: {d}\n", .{ start_indices, slice_shape });
 
                 var dValue_slice = try dValues.slice(&start_indices, &slice_shape);
 
-                //std.debug.print("Starting convolution for batch {d}, in_channel {d}, out_channel {d}\n", .{ b, ic, oc });
+                //std.log.debug("Starting convolution for batch {d}, in_channel {d}, out_channel {d}\n", .{ b, ic, oc });
 
                 //Create 0 array with bias, can be optimized
-                const zeros = try Layer.zeros(T, &pkg_allocator, out_channels, 1);
-                defer pkg_allocator.free(zeros);
+                const zeros = try Layer.zeros(T, allocator, out_channels, 1);
+                defer allocator.free(zeros);
                 var shapeBias = [_]usize{ out_channels, 1 };
-                var zeroBias = try Tensor(T).fromArray(&pkg_allocator, zeros, &shapeBias);
+                var zeroBias = try Tensor(T).fromArray(allocator, zeros, &shapeBias);
 
                 // Convolve dValues[b, oc, :, :] with flipped_weights
-                var input_grad = try CPU_convolve_tensors_with_bias(T, T, &dValue_slice, &flipped_weights, &zeroBias);
+                var input_grad = try CPU_convolve_tensors_with_bias(T, T, allocator, &dValue_slice, &flipped_weights, &zeroBias);
 
                 // Add to input_channel_gradient
                 for (0..input_grad.shape[2]) |h| {
@@ -776,7 +781,7 @@ pub fn convolution_backward_input(comptime T: type, dValues: *Tensor(T), weights
                     }
                 }
 
-                //std.debug.print("Completed convolution for batch {d}, in_channel {d}, out_channel {d}\n", .{ b, ic, oc });
+                //std.log.debug("Completed convolution for batch {d}, in_channel {d}, out_channel {d}\n", .{ b, ic, oc });
 
                 // Clean up temporary tensors
                 input_grad.deinit();
@@ -799,18 +804,18 @@ pub fn convolution_backward_input(comptime T: type, dValues: *Tensor(T), weights
         }
     }
 
-    //std.debug.print("Completed backward input gradients computation. Shape: {d}\n", .{input_gradients.shape});
+    //std.log.debug("Completed backward input gradients computation. Shape: {d}\n", .{input_gradients.shape});
 
     return input_gradients;
 }
 
 // Helper function to flip the kernel (rotate 180 degrees)
-fn flip_kernel(comptime T: type, weights: *Tensor(T), out_channel: usize, in_channel: usize) !Tensor(T) {
+fn flip_kernel(comptime T: type, allocator: *const std.mem.Allocator, weights: *Tensor(T), out_channel: usize, in_channel: usize) !Tensor(T) {
     const kernel_height = weights.shape[2];
     const kernel_width = weights.shape[3];
     var flipped_shape = [_]usize{ 1, 1, kernel_height, kernel_width };
 
-    var flipped_kernel = try Tensor(T).fromShape(&pkg_allocator, &flipped_shape);
+    var flipped_kernel = try Tensor(T).fromShape(allocator, &flipped_shape);
 
     for (0..kernel_height) |h| {
         for (0..kernel_width) |w| {
@@ -822,7 +827,7 @@ fn flip_kernel(comptime T: type, weights: *Tensor(T), out_channel: usize, in_cha
         }
     }
 
-    //std.debug.print("Flipped kernel for out_channel {d}, in_channel {d} generated.\n", .{ out_channel, in_channel });
+    //std.log.debug("Flipped kernel for out_channel {d}, in_channel {d} generated.\n", .{ out_channel, in_channel });
 
     return flipped_kernel;
 }
@@ -831,14 +836,13 @@ fn flip_kernel(comptime T: type, weights: *Tensor(T), out_channel: usize, in_cha
 //TODO: add padding
 pub fn pool_tensor(
     comptime T: type,
+    allocator: *const std.mem.Allocator,
     input: *Tensor(T),
     used_windows: *Tensor(u8), // Shape: [W, input_rows, input_cols]
     kernel: []usize,
     stride: []usize,
     poolingType: PoolingType,
 ) !Tensor(T) {
-    const allocator = pkg_allocator;
-
     // Calcolo output shape
     var outputTensorShape = try allocator.alloc(usize, input.shape.len);
     defer allocator.free(outputTensorShape);
@@ -851,7 +855,7 @@ pub fn pool_tensor(
     outputTensorShape[height] = (input.shape[height] - kernel[0] + 1) / stride[0];
     outputTensorShape[width] = (input.shape[width] - kernel[1] + 1) / stride[1];
 
-    var output = try Tensor(T).fromShape(&allocator, outputTensorShape);
+    var output = try Tensor(T).fromShape(allocator, outputTensorShape);
 
     //const output_rows = outputTensorShape[height];
     //const output_cols = outputTensorShape[width];
@@ -867,6 +871,7 @@ pub fn pool_tensor(
 
     try multidim_pooling(
         T,
+        allocator,
         input,
         used_windows,
         &output,
@@ -882,6 +887,7 @@ pub fn pool_tensor(
 
 pub fn multidim_pooling(
     comptime T: anytype,
+    allocator: *const std.mem.Allocator,
     input: *Tensor(T),
     used_windows: *Tensor(u8), // Shape: [W, input_rows, input_cols]
     output: *Tensor(T),
@@ -892,8 +898,6 @@ pub fn multidim_pooling(
     poolingType: PoolingType,
 ) !void {
     if (current_depth == output.shape.len - 2) {
-        const allocator = pkg_allocator;
-
         var temp_location = try allocator.alloc(usize, input.shape.len);
         defer allocator.free(temp_location);
         var window_location = try allocator.alloc(usize, input.shape.len);
@@ -973,6 +977,7 @@ pub fn multidim_pooling(
             location[current_depth] = element_at_current_depth;
             try multidim_pooling(
                 T,
+                allocator,
                 input,
                 used_windows,
                 output,
