@@ -13,6 +13,8 @@ const TensorError = @import("errorHandler").TensorError;
 ///Return a generic type structure
 pub fn Tensor(comptime T: type) type {
     return struct {
+        const Self = @This();
+
         data: []T, //contains all the data of the tensor in a monodimensional array
         size: usize, //dimension of the tensor, equal to data.len
         shape: []usize, //defines the multidimensional structure of the tensor
@@ -23,7 +25,7 @@ pub fn Tensor(comptime T: type) type {
         ///  - fromArray()
         ///  - copy()
         ///  - fromShape()
-        pub fn init(allocator: *const std.mem.Allocator) !@This() {
+        pub fn init(allocator: *const std.mem.Allocator) @This() {
             return @This(){
                 .data = &[_]T{},
                 .size = 0,

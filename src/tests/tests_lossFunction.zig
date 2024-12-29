@@ -316,13 +316,13 @@ test "empty vector" {
     std.debug.print("\n     test: GRADIENT CCE error on shape (len)", .{});
     const allocator = pkgAllocator.allocator;
 
-    var t1_TARGET = try Tensor(f32).init(&allocator);
+    var t1_TARGET = Tensor(f32).init(&allocator);
     defer t1_TARGET.deinit();
 
-    var t2_PREDICTION = try Tensor(f32).init(&allocator);
+    var t2_PREDICTION = Tensor(f32).init(&allocator);
     defer t2_PREDICTION.deinit();
 
-    var t3_GRAD = try Tensor(f64).init(&allocator);
+    var t3_GRAD = Tensor(f64).init(&allocator);
     defer t3_GRAD.deinit();
 
     const cce = Loss.LossFunction(LossType.CCE){};

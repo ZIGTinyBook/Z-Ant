@@ -219,12 +219,7 @@ test "Export of a complex model" {
 
     const allocator = std.heap.page_allocator;
 
-    var model = Model(f64){
-        .layers = undefined,
-        .allocator = &allocator,
-        .input_tensor = undefined,
-    };
-    try model.init();
+    var model = try Model(f64).init(&allocator);
     defer model.deinit();
 
     //layer 1: 3 inputs, 2 neurons

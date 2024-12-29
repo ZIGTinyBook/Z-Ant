@@ -23,7 +23,7 @@ pub fn exportModel(
     const writer = file.writer();
     std.log.debug("\n ..... writer created ......", .{});
 
-    try writer.writeInt(usize, model.layers.items.len, std.builtin.Endian.big);
+    try writer.writeInt(u32, @intCast(model.layers.items.len), std.builtin.Endian.big);
     for (model.layers.items) |*l| {
         try exportLayer(T, l.*, writer);
     }
@@ -58,8 +58,8 @@ pub fn exportLayerDense(
 
     try exportTensor(T, layer.weights, writer);
     try exportTensor(T, layer.bias, writer);
-    try writer.writeInt(usize, layer.n_inputs, std.builtin.Endian.big);
-    try writer.writeInt(usize, layer.n_neurons, std.builtin.Endian.big);
+    try writer.writeInt(u32, @intCast(layer.n_inputs), std.builtin.Endian.big);
+    try writer.writeInt(u32, @intCast(layer.n_neurons), std.builtin.Endian.big);
     try exportTensor(T, layer.w_gradients, writer);
     try exportTensor(T, layer.b_gradients, writer);
 }
@@ -71,8 +71,8 @@ pub fn exportLayerActivation(
 ) !void {
     std.log.debug(" activation ", .{});
 
-    try writer.writeInt(usize, layer.n_inputs, std.builtin.Endian.big);
-    try writer.writeInt(usize, layer.n_neurons, std.builtin.Endian.big);
+    try writer.writeInt(u32, @intCast(layer.n_inputs), std.builtin.Endian.big);
+    try writer.writeInt(u32, @intCast(layer.n_neurons), std.builtin.Endian.big);
 
     if (layer.activationFunction == ActivationType.ReLU) {
         _ = try writer.write("ReLU......");
@@ -93,10 +93,10 @@ pub fn exportTensor(
     std.log.debug("\n ... export tensor... ", .{});
 
     // Write tensor size and shape
-    try writer.writeInt(usize, tensor.size, std.builtin.Endian.big);
-    try writer.writeInt(usize, tensor.shape.len, std.builtin.Endian.big);
+    try writer.writeInt(u32, @intCast(tensor.size), std.builtin.Endian.big);
+    try writer.writeInt(u32, @intCast(tensor.shape.len), std.builtin.Endian.big);
     for (tensor.shape) |dim| {
-        try writer.writeInt(usize, dim, std.builtin.Endian.big);
+        try writer.writeInt(u32, @intCast(dim), std.builtin.Endian.big);
     }
 
     // Write tensor data
@@ -143,14 +143,9 @@ pub fn importModelFromPointer(
     };
     const reader = std.io.GenericReader(*MemoryReader, error{}, MemoryReader.readFn){ .context = &memory_reader };
 
-    var model: Model(T) = Model(T){
-        .layers = undefined,
-        .allocator = allocator,
-        .input_tensor = undefined,
-    };
-    try model.init();
+    var model: Model(T) = try Model(T).init(allocator);
 
-    const n_layers = try reader.readInt(usize, std.builtin.Endian.big);
+    const n_layers = try reader.readInt(u32, std.builtin.Endian.big);
     for (0..n_layers) |_| {
         const newLayer: Layer.Layer(T) = try importLayer(T, allocator, reader);
 
@@ -173,14 +168,9 @@ pub fn importModel(
     const reader = file.reader();
     std.log.debug("\n ..... reader created ......", .{});
 
-    var model: Model(T) = Model(T){
-        .layers = undefined,
-        .allocator = allocator,
-        .input_tensor = undefined,
-    };
-    try model.init();
+    var model: Model(T) = try Model(T).init(allocator);
 
-    const n_layers = try reader.readInt(usize, std.builtin.Endian.big);
+    const n_layers = try reader.readInt(u32, std.builtin.Endian.big);
     for (0..n_layers) |_| {
         const newLayer: Layer.Layer(T) = try importLayer(T, allocator, reader);
 
@@ -228,16 +218,16 @@ pub fn importLayerDense(
 ) !DenseLayer(T) {
     const weights_tens: Tensor(T) = try importTensor(T, allocator, reader);
     const bias_tens: Tensor(T) = try importTensor(T, allocator, reader);
-    const n_inputs = try reader.readInt(usize, std.builtin.Endian.big);
-    const n_neurons = try reader.readInt(usize, std.builtin.Endian.big);
+    const n_inputs = try reader.readInt(u32, std.builtin.Endian.big);
+    const n_neurons = try reader.readInt(u32, std.builtin.Endian.big);
     const w_grad_tens = try importTensor(T, allocator, reader);
     const b_grad_tens = try importTensor(T, allocator, reader);
 
     return DenseLayer(f64){
         .weights = weights_tens,
         .bias = bias_tens,
-        .input = undefined,
-        .output = undefined,
+        .input = Tensor(T).init(allocator),
+        .output = Tensor(T).init(allocator),
         .n_inputs = n_inputs,
         .n_neurons = n_neurons,
         .w_gradients = w_grad_tens,
@@ -251,15 +241,15 @@ pub fn importLayerActivation(
     allocator: *const std.mem.Allocator,
     reader: anytype,
 ) !ActivationLayer(T) {
-    const n_inputs = try reader.readInt(usize, std.builtin.Endian.big);
-    const n_neurons = try reader.readInt(usize, std.builtin.Endian.big);
+    const n_inputs = try reader.readInt(u32, std.builtin.Endian.big);
+    const n_neurons = try reader.readInt(u32, std.builtin.Endian.big);
 
     var activation_type_string: [10]u8 = undefined;
     _ = try reader.read(&activation_type_string);
 
     var layerActiv = ActivationLayer(T){
-        .input = undefined, //input_tens,
-        .output = undefined, //output_tens,
+        .input = Tensor(T).init(allocator), //input_tens,
+        .output = Tensor(T).init(allocator), //output_tens,
         .n_inputs = n_inputs,
         .n_neurons = n_neurons,
         .activationFunction = undefined,
@@ -287,15 +277,15 @@ pub fn importTensor(
     std.log.debug("\n ... import tensor... ", .{});
 
     // Read tensor size
-    const tensor_size: usize = try reader.readInt(usize, std.builtin.Endian.big);
+    const tensor_size: usize = try reader.readInt(u32, std.builtin.Endian.big);
 
     // Read tensor shape lenght
-    const tensor_shapeLen: usize = try reader.readInt(usize, std.builtin.Endian.big);
+    const tensor_shapeLen: usize = try reader.readInt(u32, std.builtin.Endian.big);
 
     // Read tensor shape
     const tensor_shape = try allocator.alloc(usize, tensor_shapeLen);
     for (0..tensor_shapeLen) |i| {
-        tensor_shape[i] = try reader.readInt(usize, std.builtin.Endian.big);
+        tensor_shape[i] = try reader.readInt(u32, std.builtin.Endian.big);
     }
 
     const tensor_data = try allocator.alloc(T, tensor_size);

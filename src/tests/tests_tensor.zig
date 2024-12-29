@@ -13,7 +13,7 @@ test "Tensor test description" {
 test "init() test" {
     std.debug.print("\n     test: init() ", .{});
     const allocator = pkgAllocator.allocator;
-    var tensor = try Tensor(f64).init(&allocator);
+    var tensor = Tensor(f64).init(&allocator);
     defer tensor.deinit();
     const size = tensor.getSize();
     try std.testing.expect(size == 0);
@@ -109,7 +109,7 @@ test "init than fill " {
     std.debug.print("\n     test:init than fill ", .{});
     const allocator = pkgAllocator.allocator;
 
-    var tensor = try Tensor(u8).init(&allocator);
+    var tensor = Tensor(u8).init(&allocator);
     defer tensor.deinit();
 
     var inputArray: [2][3]u8 = [_][3]u8{

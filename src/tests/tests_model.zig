@@ -11,12 +11,7 @@ test "Model with multiple Denselayers forward test" {
     std.debug.print("\n     test: Model with multiple layers forward test", .{});
     const allocator = pkgAllocator.allocator;
 
-    var model = Model(f64){
-        .layers = undefined,
-        .allocator = &allocator,
-        .input_tensor = undefined,
-    };
-    try model.init();
+    var model = try Model(f64).init(&allocator);
     defer model.deinit();
 
     var dense_layer1 = denselayer.DenseLayer(f64){

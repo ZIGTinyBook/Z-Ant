@@ -12,12 +12,7 @@ test "Multiple layers training test" {
     std.debug.print("\n     test: Multiple layers training test", .{});
     const allocator = pkgAllocator.allocator;
 
-    var model = Model(f64){
-        .layers = undefined,
-        .allocator = &allocator,
-        .input_tensor = undefined,
-    };
-    try model.init();
+    var model = try Model(f64).init(&allocator);
     defer model.deinit(); // dealloca il modello alla fine del test, anche in caso di errori
 
     //layer 1: 3 inputs, 2 neurons

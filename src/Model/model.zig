@@ -15,8 +15,10 @@ const DataProc = @import("dataprocessor");
 /// deallocation of resources.
 pub fn Model(comptime T: type) type {
     return struct {
-        layers: std.ArrayList(layer.Layer(T)) = undefined, // Array of layers in the model.
+        const Self = @This();
+
         allocator: *const std.mem.Allocator, // Allocator reference for dynamic memory allocation.
+        layers: std.ArrayList(layer.Layer(T)), // Array of layers in the model.
         input_tensor: tensor.Tensor(T), // Tensor that holds the model's input data.
 
         /// Initializes the model, setting up an empty list of layers and initializing
@@ -24,9 +26,12 @@ pub fn Model(comptime T: type) type {
         ///
         /// # Errors
         /// Returns an error if memory allocation for the `layers` array or `input_tensor` fails.
-        pub fn init(self: *@This()) !void {
-            self.layers = std.ArrayList(layer.Layer(T)).init(self.allocator.*);
-            self.input_tensor = try tensor.Tensor(T).init(self.allocator);
+        pub fn init(allocator: *const std.mem.Allocator) !@This() {
+            return Self{
+                .allocator = allocator,
+                .layers = std.ArrayList(layer.Layer(T)).init(allocator.*),
+                .input_tensor = tensor.Tensor(T).init(allocator),
+            };
         }
 
         /// Deinitializes the model, releasing memory for each layer and the input tensor.

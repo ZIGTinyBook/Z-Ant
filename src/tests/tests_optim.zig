@@ -13,12 +13,7 @@ test "SGD Optimizer No Update with Zero Gradients (Print Only)" {
     const allocator = pkgAllocator.allocator;
     const lr: f64 = 0.05;
 
-    var model = Model.Model(f64){
-        .layers = undefined,
-        .allocator = &allocator,
-        .input_tensor = undefined,
-    };
-    try model.init();
+    var model = try Model.Model(f64).init(&allocator);
 
     var dense_layer = denselayer.DenseLayer(f64){
         .weights = undefined,
