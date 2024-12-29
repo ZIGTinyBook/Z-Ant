@@ -201,11 +201,11 @@ pub fn importLayer(
 
         return newLayer;
     } else if (std.mem.eql(u8, &layer_type_string, "Activation")) {
-        return ActivationLayer(T).create(
-            @constCast(
-                &try importLayerActivation(T, allocator, reader),
-            ),
-        );
+        const layerPtr = try allocator.create(ActivationLayer(T));
+        layerPtr.* =
+            try importLayerActivation(T, allocator, reader);
+
+        return ActivationLayer(T).create(layerPtr);
     } else {
         return error.impossibleLayer;
     }

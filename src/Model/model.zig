@@ -77,8 +77,9 @@ pub fn Model(comptime T: type) type {
             self.input_tensor = try input.copy();
 
             for (0..self.layers.items.len) |i| {
-                std.log.debug("\n--------------------------------------forwarding layer {}", .{i});
+                std.log.debug("forwarding layer {}: {?}, input {*}, output {*}", .{ i, self.layers.items[i].layer_type, self.layers.items[i].get_input().data, self.layers.items[i].get_output().data });
                 if (self.layers.items[i].layer_type != layer.LayerType.ActivationLayer) try DataProc.normalize(T, self.getPrevOut(i), NormalizType.UnityBasedNormalizartion);
+
                 _ = try self.layers.items[i].forward(self.getPrevOut(i));
                 //self.layers.items[i].printLayer(0);
             }

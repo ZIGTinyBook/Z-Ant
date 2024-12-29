@@ -19,10 +19,13 @@ pub const std_options = .{
     .log_level = .info,
 
     // Define logFn to override the std implementation
-    .logFn = myLogFn,
+    .logFn = customLogFn,
 };
 
-pub fn myLogFn(
+var log_function: ?*const fn (string: [*]const u8) callconv(.C) void = null;
+var timestamp_function: ?*const fn () callconv(.C) u64 = null;
+
+pub fn customLogFn(
     comptime level: std.log.Level,
     comptime scope: @Type(.EnumLiteral),
     comptime format: []const u8,
@@ -30,16 +33,34 @@ pub fn myLogFn(
 ) void {
     _ = level;
     _ = scope;
-    _ = format;
-    _ = args;
+    if (log_function) |unwrapped_log_function| {
+        var buf: [256]u8 = [_]u8{0} ** 256;
+        unwrapped_log_function((std.fmt.bufPrint(buf[0..250], format, args) catch return).ptr);
+    }
+}
+
+export fn setLogFunction(function: *const fn (string: [*]const u8) callconv(.C) void) void {
+    log_function = function;
+}
+
+export fn setTimestampFunction(function: *const fn () callconv(.C) u64) void {
+    timestamp_function = function;
 }
 
 export fn infer() i16 {
     return internal();
 }
 
+fn getTimestamp() u64 {
+    if (timestamp_function) |unwrapped_timestamp_function| {
+        return unwrapped_timestamp_function();
+    } else {
+        return 0;
+    }
+}
+
 fn internal() i16 {
-    var buffer: [200000]u8 = undefined;
+    var buffer: [10000]u8 = undefined;
     var fba = std.heap.FixedBufferAllocator.init(&buffer);
     const allocator = fba.allocator();
 
@@ -56,7 +77,9 @@ fn internal() i16 {
     var input_tensor = tensor.Tensor(f64).fromArray(&allocator, &inputArray, &shape) catch return -2;
     defer input_tensor.deinit();
 
-    _ = model.forward(&input_tensor) catch return -3;
+    std.log.info("[{}] starting forward", .{getTimestamp()});
+    const result = model.forward(&input_tensor) catch return -3;
+    std.log.info("[{}] {any}", .{ getTimestamp(), result.data });
 
     return 0;
 }
