@@ -1,5 +1,5 @@
 .{
-    .name = "z-ant",
+    .name = "zant",
     .version = "0.0.1",
     .paths = .{
         "build.zig",

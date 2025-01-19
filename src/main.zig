@@ -11,193 +11,175 @@ const ActivationType = @import("activation_function").ActivationType;
 const LossType = @import("loss").LossType;
 const Trainer = @import("trainer");
 const InfoAllocator = @import("info_allocator");
+const model_import_export = @import("model_import_export");
 
 pub const std_options = .{
     // Set the log level to info
     .log_level = .debug,
 };
 
+const stdout = std.io.getStdOut().writer();
+const stderr = std.io.getStdErr().writer();
+
 pub fn main() !void {
     const allocator = @import("pkgAllocator").allocator;
 
-    var model = Model(f64){
-        .layers = undefined,
-        .allocator = &allocator,
-        .input_tensor = undefined,
-    };
-    try model.init();
+    const args = try std.process.argsWithAllocator(allocator);
+    defer args.deinit();
 
-    var conv_layer = convlayer(f64){
-        .weights = undefined,
-        .bias = undefined,
-        .input = undefined,
-        .output = undefined,
-        .input_channels = 0,
-        .output_channels = 0,
-        .kernel_size = undefined,
-        .w_gradients = undefined,
-        .b_gradients = undefined,
-        .allocator = &allocator,
-    };
-    var layer_ = conv_layer.create();
-    try layer_.init(&allocator, @constCast(&struct {
-        input_channels: usize,
-        output_channels: usize,
-        kernel_size: [2]usize,
-    }{
-        .input_channels = 1,
-        .output_channels = 32,
-        .kernel_size = .{ 3, 3 },
-    }));
-    try model.addLayer(layer_);
+    var target: ?[]const u8 = null;
+    var cpu: ?[]const u8 = null;
+    var weights_file: ?[]const u8 = null;
+    var output_folder: []const u8 = "libpredict.a";
 
-    // var layer1Activ = activationlayer(f64, &allocator){
-    //     .input = undefined,
-    //     .output = undefined,
-    //     .n_inputs = 0,
-    //     .n_neurons = 0,
-    //     .activationFunction = ActivationType.ReLU,
-    //     .allocator = &allocator,
-    // };
-    // var layer1_act = activationlayer(f64, &allocator).create(&layer1Activ);
-    // try layer1_act.init(@constCast(&struct {
-    //     n_inputs: usize,
-    //     n_neurons: usize,
-    // }{
-    //     .n_inputs = 64,
-    //     .n_neurons = 64,
-    // }));
-    // try model.addLayer(layer1_act);
+    const executable_name = args.next() orelse unreachable;
 
-    //layer 1 ----------------------------------------------------------------------------
-    var conv_layer2 = convlayer(f64){
-        .weights = undefined,
-        .bias = undefined,
-        .input = undefined,
-        .output = undefined,
-        .input_channels = 0,
-        .output_channels = 0,
-        .kernel_size = undefined,
-        .w_gradients = undefined,
-        .b_gradients = undefined,
-        .allocator = &allocator,
-    };
-    var layer2_ = conv_layer2.create();
-    try layer2_.init(&allocator, @constCast(&struct {
-        input_channels: usize,
-        output_channels: usize,
-        kernel_size: [2]usize,
-    }{
-        .input_channels = 32,
-        .output_channels = 32,
-        .kernel_size = .{ 3, 3 },
-    }));
-    try model.addLayer(layer2_);
+    while (args.next()) |arg| {
+        // Print help
+        if (std.mem.eql(u8, arg, "--help") or std.mem.eql(u8, arg, "-h")) {
+            printHelp(executable_name);
+            std.process.exit(0);
+        }
+        // output folder
+        else if (std.mem.startsWith(u8, arg, "--output ")) {
+            output_folder = arg[9..];
+        }
+        // compilation target
+        else if (std.mem.startsWith(u8, arg, "--target ")) {
+            target = arg[9..];
+        }
+        // compilation CPU
+        else if (std.mem.startsWith(u8, arg, "--cpu ")) {
+            cpu = arg[6..];
+        }
+        // Weights file path was not previously specified
+        else if (weights_file == null) {
+            weights_file = try allocator.dupe(u8, arg);
+        }
+        // Weights file path was already specified, error
+        else {
+            try stderr.print("Excess argument: {s}", .{arg});
 
-    // var layer2Activ = activationlayer(f64, &allocator){
-    //     .input = undefined,
-    //     .output = undefined,
-    //     .n_inputs = 0,
-    //     .n_neurons = 0,
-    //     .activationFunction = ActivationType.ReLU,
-    //     .allocator = &allocator,
-    // };
-    // var layer2_act = activationlayer(f64, &allocator).create(&layer2Activ);
-    // try layer2_act.init(@constCast(&struct {
-    //     n_inputs: usize,
-    //     n_neurons: usize,
-    // }{
-    //     .n_inputs = 64,
-    //     .n_neurons = 64,
-    // }));
-    // try model.addLayer(layer2_act);
+            printHelp(executable_name);
+            std.process.exit(-1);
+        }
+    }
 
-    //layer 2 ----------------------------------------------------------------------------
-    var flatten_layer = flattenlayer(f64){
-        .input = undefined,
-        .output = undefined,
-        .allocator = &allocator,
-    };
-    var Flattenlayer = flatten_layer.create();
+    if (weights_file) |weights_file_path| {
+        var model = model_import_export.importModel(f64, &allocator, weights_file_path) catch {
+            try stderr.print("Invalid weights file!", .{});
+        };
+        defer model.deinit();
 
-    // Initialize the Flatten layer with placeholder args
-    var init_args = flattenlayer(f64).FlattenInitArgs{
-        .placeholder = true,
-    };
-    try Flattenlayer.init(&allocator, &init_args);
+        var file = try std.fs.cwd().createFile("/tmp/predict.zig", .{});
+        defer file.close();
+        const writer = file.writer();
 
-    try model.addLayer(Flattenlayer);
+        writer.write(
+            \\const tensor = @import("tensor");
+            \\const model_import_export = @import("model_import_export");
+            \\const build_options = @import("build_options");
+            \\
+            \\pub const std_options = .{
+            \\    // Set the log level to info
+            \\    .log_level = .info,
+            \\
+            \\    // Define logFn to override the std implementation
+            \\    .logFn = customLogFn,
+            \\};
+            \\
+            \\var log_function: ?*const fn (string: [*]const u8) callconv(.C) void = null;
+            \\var timestamp_function: ?*const fn () callconv(.C) u64 = null;
+            \\
+            \\pub fn customLogFn(
+            \\    comptime level: std.log.Level,
+            \\    comptime scope: @Type(.EnumLiteral),
+            \\    comptime format: []const u8,
+            \\    args: anytype,
+            \\) void {
+            \\    _ = level;
+            \\    _ = scope;
+            \\    if (log_function) |unwrapped_log_function| {
+            \\        var buf: [256]u8 = [_]u8{0} ** 256;
+            \\        unwrapped_log_function((std.fmt.bufPrint(buf[0..250], format, args) catch return).ptr);
+            \\    }
+            \\}
+            \\
+            \\export fn setLogFunction(function: *const fn (string: [*]const u8) callconv(.C) void) void {
+            \\    log_function = function;
+            \\}
+            \\
+            \\export fn setTimestampFunction(function: *const fn () callconv(.C) u64) void {
+            \\    timestamp_function = function;
+            \\}
+            \\
+            \\export fn infer() i16 {
+            \\    return internal();
+            \\}
+            \\
+            \\fn getTimestamp() u64 {
+            \\    if (timestamp_function) |unwrapped_timestamp_function| {
+            \\        return unwrapped_timestamp_function();
+            \\    } else {
+            \\        return 0;
+            \\    }
+            \\}
+            \\
+            \\var buffer: [400000]u8 = undefined;
+            \\
+            \\fn internal() i16 {
+            \\    var fba = std.heap.FixedBufferAllocator.init(&buffer);
+            \\    const allocator = fba.allocator();
+            \\
+            \\    var model = model_import_export.importModelFromPointer(f64, &allocator, @embedFile("model_binary")) catch return -1;
+            \\    defer model.deinit();
+            \\
+            \\    var inputArray: [1][1][28][28]f64 = [1][1][28][28]f64{
+            \\        [_]f64{
+            \\            [_]f64{
+            \\                [_]f64{} ** 28,
+            \\            } ** 28,
+            \\        },
+            \\    };
+            \\    var shape: [2]usize = [_]usize{ 2, 3 };
+            \\
+            \\    var input_tensor = tensor.Tensor(f64).fromArray(&allocator, &inputArray, &shape) catch return -2;
+            \\    defer input_tensor.deinit();
+            \\
+            \\    std.log.info("[{}] starting forward", .{getTimestamp()});
+            \\    const result = model.forward(&input_tensor) catch return -3;
+            \\    std.log.info("[{}] {any}", .{ getTimestamp(), result.data });
+            \\
+            \\    return 0;
+            \\}
+        );
+    }
+    // No weights file was specified
+    else {
+        try stderr.print("Missing weights file!", .{});
 
-    //layer 3 ----------------------------------------------------------------------------
-    var layer3 = denselayer(f64){
-        .weights = undefined,
-        .bias = undefined,
-        .input = undefined,
-        .output = undefined,
-        .n_inputs = 0,
-        .n_neurons = 0,
-        .w_gradients = undefined,
-        .b_gradients = undefined,
-        .allocator = undefined,
-    };
-    //layer 3: 64 inputs, 10 neurons
-    var layer3_ = denselayer(f64).create(&layer3);
-    try layer3_.init(&allocator, @constCast(&struct {
-        n_inputs: usize,
-        n_neurons: usize,
-    }{
-        .n_inputs = 18432,
-        .n_neurons = 10,
-    }));
-    try model.addLayer(layer3_);
+        printHelp(executable_name);
+        std.process.exit(-1);
+    }
+}
 
-    //layer 4 ----------------------------------------------------------------------------
-    var layer3Activ = activationlayer(f64){
-        .input = undefined,
-        .output = undefined,
-        .n_inputs = 0,
-        .n_neurons = 0,
-        .activationFunction = ActivationType.Softmax,
-        .allocator = &allocator,
-    };
-    var layer3_act = activationlayer(f64).create(&layer3Activ);
-    try layer3_act.init(&allocator, @constCast(&struct {
-        n_inputs: usize,
-        n_neurons: usize,
-    }{
-        .n_inputs = 18432,
-        .n_neurons = 10,
-    }));
-    try model.addLayer(layer3_act);
+fn printHelp(executable_name: []const u8) !void {
+    try stdout.print(
+        \\Usage:
+        \\    {s} [options] [file]
+        \\
+        \\Options:
+        \\ -h, --help           Print this message
+        \\ -Dtarget=<target>    Target option, to be passed verbatim to the Zig compiler
+        \\ -Dcpu=<cpu>          Cpu option, to be passed verbatim to the Zig compiler
+    , .{executable_name});
+}
 
-    var load = loader.DataLoader(f64, u8, u8, 32, 3){
-        .X = undefined,
-        .y = undefined,
-        .xTensor = undefined,
-        .yTensor = undefined,
-        .XBatch = undefined,
-        .yBatch = undefined,
-    };
+fn prepareZantProject(path: []const u8, allocator: *std.mem.Allocator) !void {
+    const cwd = std.fs.cwd();
+    try cwd.makeDir(path);
 
-    const image_file_name: []const u8 = "t10k-images-idx3-ubyte";
-    const label_file_name: []const u8 = "t10k-labels-idx1-ubyte";
-
-    try load.loadMNIST2DDataParallel(&allocator, image_file_name, label_file_name);
-
-    try Trainer.TrainDataLoader2D(
-        f64, //The data type for the tensor elements in the model
-        u8, //The data type for the input tensor (X)
-        u8, //The data type for the output tensor (Y)
-        &allocator, //Memory allocator for dynamic allocations during training
-        32, //The number of samples in each batch
-        784, //The number of features in each input sample
-        &model, //A pointer to the model to be trained
-        &load, //A pointer to the `DataLoader` that provides data batches
-        3, //The total number of epochs to train for
-        LossType.CCE, //The type of loss function used during training
-        0.005,
-        0.8, //Training size
-    );
-
-    model.deinit();
+    const result = try std.process.Child.run(.{ .allocator = allocator, .cwd = path, .argv = .{ "zig", "init" } });
+    allocator.free(result.stderr);
+    allocator.free(result.stdout);
 }
