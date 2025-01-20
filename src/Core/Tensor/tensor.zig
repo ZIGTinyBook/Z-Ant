@@ -66,7 +66,7 @@ pub fn Tensor(comptime T: type) type {
             const tensorData = try allocator.alloc(T, total_size);
 
             // Flatten the input array into tensor data
-            _ = flattenArray(T, inputArray, tensorData, 0);
+            _ = flattenArray(T, inputArray, tensorData, 0, total_size);
 
             // Return the new tensor
             return @This(){
@@ -132,7 +132,7 @@ pub fn Tensor(comptime T: type) type {
             @memcpy(tensorShape, shape);
 
             const tensorData = try self.allocator.alloc(T, total_size);
-            _ = flattenArray(T, inputArray, tensorData, 0);
+            _ = flattenArray(T, inputArray, tensorData, 0, total_size);
 
             self.data = tensorData;
             self.size = total_size;
@@ -435,7 +435,7 @@ pub fn Tensor(comptime T: type) type {
         }
 
         /// Prints all the array self.data in an array.
-        pub fn print(self: *@This()) void {
+        pub fn print(self: *const @This()) void {
             std.log.debug("\n  tensor data: ", .{});
             for (0..self.size) |i| {
                 std.log.debug("{} ", .{self.data[i]});
@@ -538,7 +538,7 @@ pub fn Tensor(comptime T: type) type {
 }
 
 /// Recursive function to flatten a multidimensional array
-fn flattenArray(comptime T: type, arr: anytype, flatArr: []T, startIndex: usize) usize {
+fn flattenArray(comptime T: type, arr: anytype, flatArr: []T, startIndex: usize, size: usize) usize {
     var idx = startIndex;
 
     const arrTypeInfo = @typeInfo(@TypeOf(arr));
@@ -546,8 +546,8 @@ fn flattenArray(comptime T: type, arr: anytype, flatArr: []T, startIndex: usize)
     if (arrTypeInfo == .Array or arrTypeInfo == .Pointer) {
         // if arr is a lice or 1d  DIRECTLY COPY
         if (@TypeOf(arr[0]) == T) {
-            for (arr) |val| {
-                flatArr[idx] = val;
+            for (idx..size) |i| {
+                flatArr[idx] = arr[i];
                 idx += 1;
             }
         } else {

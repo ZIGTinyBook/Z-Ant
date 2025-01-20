@@ -38,6 +38,7 @@ pub fn ConvolutionalLayer(comptime T: type) type {
                     .get_n_neurons = get_n_neurons,
                     .get_input = get_input,
                     .get_output = get_output,
+                    .codegen = codegen,
                 },
             };
         }
@@ -217,6 +218,13 @@ pub fn ConvolutionalLayer(comptime T: type) type {
             const self: *Self = @ptrCast(@alignCast(ctx));
 
             return &self.b_gradients;
+        }
+
+        pub fn codegen(ctx: *anyopaque, writer: std.fs.File.Writer) !void {
+            const self: *Self = @ptrCast(@alignCast(ctx));
+            _ = self;
+            _ = writer;
+            unreachable;
         }
     };
 }

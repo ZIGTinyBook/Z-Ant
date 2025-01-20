@@ -4,6 +4,7 @@ const TensMath = @import("tensor_m");
 const Layer = @import("Layer");
 const Architectures = @import("architectures").Architectures;
 const LayerError = @import("errorHandler").LayerError;
+const Codegen = @import("codegen");
 
 /// Function to create a DenseLayer struct in future it will be possible to create other types of layers like convolutional, LSTM etc.
 /// The DenseLayer is a fully connected layer, it has a weight matrix and a bias vector.
@@ -42,6 +43,7 @@ pub fn DenseLayer(comptime T: type) type {
                     .get_n_neurons = get_n_neurons,
                     .get_input = get_input,
                     .get_output = get_output,
+                    .codegen = codegen,
                 },
             };
         }
@@ -259,6 +261,25 @@ pub fn DenseLayer(comptime T: type) type {
             const self: *Self = @ptrCast(@alignCast(ctx));
 
             return &self.b_gradients;
+        }
+
+        pub fn codegen(ctx: *anyopaque, writer: std.fs.File.Writer) !void {
+            const self: *Self = @ptrCast(@alignCast(ctx));
+
+            try writer.print("const {s} = blk: {{\n", .{"test"});
+            try Codegen.writeAllocator(writer, "allocator", self.n_inputs * self.n_neurons);
+            try writer.print(
+                \\const input_ptr: [*]const f64 = @ptrCast(input);
+                \\break :blk try tensor.Tensor(f64).fromArray(allocator, input_ptr, &.{{1, {}}});
+            , .{self.n_inputs});
+            _ = try writer.write("};\n");
+
+            _ = try writer.write(
+                \\input_tensor.print();
+                \\
+            );
+
+            unreachable;
         }
     };
 }

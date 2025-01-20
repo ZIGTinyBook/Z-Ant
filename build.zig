@@ -52,6 +52,9 @@ pub fn build(b: *std.Build) void {
     const allocator_mod = b.createModule(.{ .root_source_file = b.path("src/Utils/allocator.zig") });
     allocator_mod.addOptions("build_options", build_options);
 
+    // Create modules from the source files in the `src/Codegen` directory.
+    const codegen_mod = b.createModule(.{ .root_source_file = b.path("src/Codegen/codegen.zig") });
+
     //************************************************MODEL DEPENDENCIES************************************************
 
     // Add necessary imports for the model module.
@@ -83,6 +86,7 @@ pub fn build(b: *std.Build) void {
     denseLayer_mod.addImport("Layer", layer_mod);
     denseLayer_mod.addImport("architectures", architectures_mod);
     denseLayer_mod.addImport("errorHandler", errorHandler_mod);
+    denseLayer_mod.addImport("codegen", codegen_mod);
 
     //************************************************CONVLAYER DEPENDENCIES************************************************
     convLayer_mod.addImport("Tensor", tensor_mod);
@@ -115,6 +119,7 @@ pub fn build(b: *std.Build) void {
     activationLayer_mod.addImport("architectures", architectures_mod);
     activationLayer_mod.addImport("activation_function", activation_mod);
     activationLayer_mod.addImport("errorHandler", errorHandler_mod);
+    activationLayer_mod.addImport("codegen", codegen_mod);
 
     //************************************************DATA LOADER DEPENDENCIES************************************************
 
@@ -207,6 +212,7 @@ pub fn build(b: *std.Build) void {
 
     // Add necessary imports for the main executable.
     exe.root_module.addImport("tensor", tensor_mod);
+    exe.root_module.addImport("codegen", codegen_mod);
     exe.root_module.addImport("model", model_mod);
     exe.root_module.addImport("layer", layer_mod);
     exe.root_module.addImport("dataloader", dataloader_mod);
@@ -220,6 +226,7 @@ pub fn build(b: *std.Build) void {
     exe.root_module.addImport("flattenLayer", flattenLayer_mod);
     exe.root_module.addImport("poolingLayer", poolingLayer_mod);
     exe.root_module.addImport("pkgAllocator", allocator_mod);
+    exe.root_module.addImport("model_import_export", modelImportExport_mod);
 
     // Install the executable.
     b.installArtifact(exe);

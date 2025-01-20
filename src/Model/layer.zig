@@ -70,6 +70,7 @@ pub fn Layer(comptime T: type) type {
             get_n_neurons: *const fn (ctx: *anyopaque) usize,
             get_input: *const fn (ctx: *anyopaque) *const tensor.Tensor(T),
             get_output: *const fn (ctx: *anyopaque) *tensor.Tensor(T),
+            codegen: *const fn (ctx: *anyopaque, writer: std.fs.File.Writer) std.posix.WriteError!void,
         };
 
         pub fn init(self: Self, alloc: *const std.mem.Allocator, args: *anyopaque) anyerror!void {
@@ -104,6 +105,9 @@ pub fn Layer(comptime T: type) type {
         }
         pub fn get_output(self: Self) *tensor.Tensor(T) {
             return self.layer_impl.get_output(self.layer_ptr);
+        }
+        pub fn codegen(self: Self, writer: std.fs.File.Writer) !void {
+            return self.layer_impl.codegen(self.layer_ptr, writer);
         }
     };
 }
