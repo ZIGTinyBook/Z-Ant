@@ -1,26 +1,36 @@
 const std = @import("std");
-const tensor = @import("tensor");
+
+const zant = @import("zant");
+
+const core_mod = zant.core;
+const tensor = core_mod.tensor;
 //--- layers
-const layer = @import("layer");
+const model_mod = zant.model;
+const layer = model_mod.layer;
 const DenseLayer = layer.DenseLayer;
+const BatchNormLayer = layer.BatchNormLayer;
 const ConvolutionalLayer = layer.ConvolutionalLayer;
 const FlattenLayer = layer.FlattenLayer;
 const PoolingLayer = layer.PoolingLayer;
 const PoolingType = layer.poolingLayer.PoolingType;
 const ActivationLayer = layer.ActivationLayer;
-//--- other
-const Model = @import("model").Model;
-const loader = @import("dataloader");
 const ActivationType = layer.ActivationType;
-const LossType = @import("loss").LossType;
-const Trainer = @import("trainer");
-const BatchNormLayer = @import("batchNormLayer").BatchNormLayer;
-const onnx = @import("onnx");
-const codeGen = @import("codeGen");
+//--- other
+const Model = model_mod.Model;
+
+const data_handler_mod = zant.data_handler;
+const loader = data_handler_mod.data_loader;
+
+const Trainer = data_handler_mod.trainer;
+const LossType = model_mod.loss_function.LossType;
+
+const onnx = zant.onnx;
+
+const utils_mod = zant.utils;
+
+const allocator = utils_mod.allocator.allocator;
 
 pub fn main() !void {
-    const allocator = @import("pkgAllocator").allocator;
-
     var model = Model(f64){
         .layers = undefined,
         .allocator = &allocator,

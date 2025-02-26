@@ -3,25 +3,26 @@
 //! it will possible to use proper initialization techniques.
 //! Layer can be stacked in a model and they implement proper forward and backward methods.
 
-const std = @import("std");
-const Tensor = @import("tensor").Tensor;
-const TensMath = @import("tensor_m");
-const Architectures = @import("architectures").Architectures;
-const TensorError = @import("tensor_m").TensorError;
-const ArchitectureError = @import("tensor_m").ArchitectureError;
-//import error libraries
-const LayerError = @import("errorHandler").LayerError;
-
 // All existing layers are imported so that the layer module can be used as a layer library by other modules.
 // New layers should be imported here.
-pub const ActivationLayer = @import("activationLayer").ActivationLayer;
-pub const ActivationType = @import("activationLayer").ActivationType;
-pub const BatchNormLayer = @import("batchNormLayer").BatchNormLayer;
-pub const ConvolutionalLayer = @import("convLayer").ConvolutionalLayer;
-pub const DenseLayer = @import("denseLayer").DenseLayer;
-pub const FlattenLayer = @import("flattenLayer").FlattenLayer;
-pub const PoolingLayer = @import("poolingLayer").PoolingLayer;
-pub const poolingLayer = @import("poolingLayer");
+pub const ActivationLayer = @import("activationLayer.zig").ActivationLayer;
+pub const ActivationType = @import("activationLayer.zig").ActivationType;
+pub const BatchNormLayer = @import("batchNormLayer.zig").BatchNormLayer;
+pub const ConvolutionalLayer = @import("convLayer.zig").ConvolutionalLayer;
+pub const DenseLayer = @import("denseLayer.zig").DenseLayer;
+pub const FlattenLayer = @import("flattenLayer.zig").FlattenLayer;
+pub const PoolingLayer = @import("poolingLayer.zig").PoolingLayer;
+pub const poolingLayer = @import("poolingLayer.zig");
+
+const std = @import("std");
+const zant = @import("../../zant.zig");
+const Tensor = zant.core.tensor.Tensor;
+const TensMath = zant.core.tensor.math_standard;
+const TensorError = TensMath.TensorError;
+const ArchitectureError = TensMath.ArchitectureError;
+
+//import error libraries
+const LayerError = zant.utils.error_handler.LayerError;
 
 pub const LayerType = enum {
     DenseLayer,

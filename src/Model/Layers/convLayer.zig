@@ -1,9 +1,10 @@
 const std = @import("std");
-const Tensor = @import("Tensor");
-const TensMath = @import("tensor_m");
-const Layer = @import("Layer");
-const Architectures = @import("architectures").Architectures;
-const LayerError = @import("errorHandler").LayerError;
+
+const zant = @import("../../zant.zig");
+const Tensor = zant.core.tensor;
+const TensMath = zant.core.tensor.math_standard;
+const Layer = zant.model.layer;
+const LayerError = zant.utils.error_handler.LayerError;
 
 /// Represents a convolutional layer in a neural network.
 /// This type is parameterized by the data type `T` for the elements in the tensors (e.g., `f32`, `f64`, etc.).

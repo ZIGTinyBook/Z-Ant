@@ -1,10 +1,12 @@
 const std = @import("std");
-const Tensor = @import("tensor").Tensor;
-const pkg_allocator = @import("pkgAllocator").allocator;
+const zant = @import("../../../zant.zig");
+
+const Tensor = zant.core.tensor.Tensor;
+const pkg_allocator = zant.utils.allocator.allocator;
 const assert = std.debug.assert;
 
-const ArchitectureError = @import("errorHandler").ArchitectureError;
-const TensorMathError = @import("errorHandler").TensorMathError;
+const ArchitectureError = zant.utils.error_handler.ArchitectureError;
+const TensorMathError = zant.utils.error_handler.TensorMathError;
 
 // Optimize for L1 cache size (typically 32KB)
 const BLOCK_SIZE_M: usize = 32;

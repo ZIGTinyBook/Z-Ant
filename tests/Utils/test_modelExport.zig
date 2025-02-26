@@ -1,18 +1,19 @@
 const std = @import("std");
-const model_import_export = @import("model_import_export");
-const Model = @import("model").Model;
-const Layer = @import("layer");
+const zant = @import("zant");
+const model_import_export = zant.utils.model;
+const Model = zant.model.Model;
+const Layer = zant.model.layer;
 const DenseLayer = Layer.DenseLayer;
 const ActivationLayer = Layer.ActivationLayer;
 const ConvolutionalLayer = Layer.ConvolutionalLayer;
 const FlattenLayer = Layer.FlattenLayer;
 const PoolingLayer = Layer.poolingLayer.PoolingLayer;
 
-const Tensor = @import("tensor").Tensor;
-const ActivationType = @import("layer").ActivationType;
-const Trainer = @import("trainer");
-const pkgAllocator = @import("pkgAllocator");
-const TensMath = @import("tensor_m");
+const Tensor = zant.core.tensor.Tensor;
+const ActivationType = Layer.ActivationType;
+const Trainer = zant.data_handler.trainer;
+const pkgAllocator = zant.utils.allocator;
+const TensMath = zant.core.tensor.math_standard;
 
 test "Import/Export of a tensor" {
     std.debug.print("\n     test: Import/Export of a tensor", .{});

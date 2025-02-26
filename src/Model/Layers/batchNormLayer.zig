@@ -1,9 +1,9 @@
 const std = @import("std");
-const Tensor = @import("Tensor");
-const TensorMath = @import("tensor_m");
-const Layer = @import("Layer");
-const Architectures = @import("architectures").Architectures;
-const LayerError = @import("errorHandler").LayerError;
+const zant = @import("../../zant.zig");
+const Tensor = zant.core.tensor;
+const TensorMath = zant.core.tensor.math_standard;
+const Layer = zant.model.layer;
+const LayerError = zant.utils.error_handler.LayerError;
 
 /// Represents a batch normalization layer in a neural network.
 /// This layer normalizes the activations of the previous layer at each batch,

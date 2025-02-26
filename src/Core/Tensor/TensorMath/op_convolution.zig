@@ -1,7 +1,10 @@
 const std = @import("std");
-const Tensor = @import("tensor").Tensor; // Import Tensor type
-const pkg_allocator = @import("pkgAllocator").allocator;
-const TensorMathError = @import("errorHandler").TensorMathError;
+const zant = @import("../../../zant.zig");
+
+const Tensor = zant.core.tensor.Tensor; // Import Tensor type
+const pkg_allocator = zant.utils.allocator.allocator;
+const TensorMathError = zant.utils.error_handler.TensorMathError;
+
 const op_mat_mul = @import("op_mat_mul.zig");
 const mat_mul = op_mat_mul.mat_mul;
 const lib_shape_math = @import("lib_shape_math.zig");

@@ -1,12 +1,14 @@
+pub const optim = @import("optim.zig");
+pub const loss_function = @import("lossFunction.zig");
+pub const layer = @import("layers/layer.zig");
+
 const std = @import("std");
-const tensor = @import("tensor");
-const layer = @import("layer");
-const Loss = @import("loss");
-const LossType = @import("loss").LossType;
-const TensMath = @import("tensor_m");
-const Optim = @import("optim");
-const NormalizType = @import("dataprocessor").NormalizationType;
-const DataProc = @import("dataprocessor");
+const zant = @import("../zant.zig");
+const tensor = zant.core.tensor;
+const TensMath = tensor.math_standard;
+const Optim = @import("optim.zig");
+const DataProc = zant.data_handler.data_processor;
+const NormalizType = DataProc.NormalizationType;
 
 /// The `Model` struct represents a neural network model composed of multiple layers.
 /// This model can be configured with a specific data type (`T`) and allocator. It supports
@@ -68,7 +70,6 @@ pub fn Model(comptime T: type) type {
         /// Returns an error if any layer's forward pass or tensor copying fails.
         pub fn forward(self: *@This(), input_tensor: *tensor.Tensor(T)) !*tensor.Tensor(T) {
             if (self.layers.items.len == 0) {
-
                 if (self.input_tensor.data.len > 0) self.input_tensor.deinit();
 
                 self.input_tensor = try input_tensor.copy();

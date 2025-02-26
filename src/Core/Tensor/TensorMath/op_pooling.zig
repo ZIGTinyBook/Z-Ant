@@ -1,8 +1,10 @@
 const std = @import("std");
-const Tensor = @import("tensor").Tensor; // Import Tensor type
-const pkg_allocator = @import("pkgAllocator").allocator;
-const TensorMathError = @import("errorHandler").TensorMathError;
-const PoolingType = @import("layer").poolingLayer.PoolingType;
+const zant = @import("../../../zant.zig");
+
+const Tensor = zant.core.tensor.Tensor; // Import Tensor type
+const pkg_allocator = zant.utils.allocator.allocator;
+const TensorMathError = zant.utils.error_handler.TensorMathError;
+const PoolingType = zant.model.layer.poolingLayer.PoolingType;
 
 pub const AutoPadType = enum {
     NOTSET,

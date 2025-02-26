@@ -1,17 +1,18 @@
 const std = @import("std");
 const cwd = std.fs.cwd();
-const Model = @import("model").Model;
+const zant = @import("../zant.zig");
+const Model = zant.model.Model;
 //------------layer libraries
-const Layer = @import("layer");
+const Layer = zant.model.layer;
 const DenseLayer = Layer.DenseLayer;
 const ActivationLayer = Layer.ActivationLayer;
 const ConvolutionalLayer = Layer.ConvolutionalLayer;
 const FlattenLayer = Layer.FlattenLayer;
 const PoolingLayer = Layer.PoolingLayer;
 
-const LayerType = @import("layer").LayerType;
-const Tensor = @import("tensor").Tensor;
-const ActivationType = @import("layer").ActivationType;
+const LayerType = Layer.LayerType;
+const Tensor = zant.core.tensor.Tensor;
+const ActivationType = Layer.ActivationType;
 const PoolingType = Layer.poolingLayer.PoolingType;
 
 // ----------------------------------------------------------------------------

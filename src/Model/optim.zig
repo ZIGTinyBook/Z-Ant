@@ -1,8 +1,9 @@
 const std = @import("std");
-const tensor = @import("tensor");
-const layer = @import("layer");
-const Model = @import("model");
-const TensorMathError = @import("errorHandler").TensorMathError;
+const zant = @import("../zant.zig");
+const tensor = zant.core.tensor;
+const layer = zant.model.layer;
+const Model = zant.model;
+const TensorMathError = zant.utils.error_handler.TensorMathError;
 const DenseLayer = layer.DenseLayer;
 const ConvolutionalLayer = layer.ConvolutionalLayer; // Make sure this is the correct import for your convolutional layer
 

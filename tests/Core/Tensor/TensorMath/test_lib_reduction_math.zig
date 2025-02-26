@@ -1,7 +1,8 @@
 const std = @import("std");
-const pkgAllocator = @import("pkgAllocator");
-const TensMath = @import("tensor_m");
-const Tensor = @import("tensor").Tensor;
+const zant = @import("zant");
+const pkgAllocator = zant.utils.allocator;
+const TensMath = zant.core.tensor.math_standard;
+const Tensor = zant.core.tensor.Tensor;
 
 test "mean" {
     std.debug.print("\n     test:mean", .{});

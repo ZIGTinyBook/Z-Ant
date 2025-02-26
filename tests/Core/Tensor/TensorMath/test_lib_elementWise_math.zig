@@ -1,10 +1,11 @@
 const std = @import("std");
-const pkgAllocator = @import("pkgAllocator");
-const TensMath = @import("tensor_m");
-const Tensor = @import("tensor").Tensor;
-const TensorError = @import("errorHandler").TensorError;
-const TensorMathError = @import("errorHandler").TensorMathError;
-const TypeError = @import("errorHandler").TypeError;
+const zant = @import("zant");
+
+const pkgAllocator = zant.utils.allocator;
+const TensMath = zant.core.tensor.math_standard;
+const Tensor = zant.core.tensor.Tensor;
+const TensorError = zant.utils.error_handler.TensorError;
+const TensorMathError = zant.utils.error_handler.TensorMathError;
 
 test "Sum two tensors on CPU architecture" {
     std.debug.print("\n     test: Sum two tensors on CPU architecture", .{});

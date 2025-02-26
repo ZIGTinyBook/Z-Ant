@@ -1,9 +1,10 @@
 const std = @import("std");
-const pkgAllocator = @import("pkgAllocator");
-const TensMath = @import("tensor_m");
-const Tensor = @import("tensor").Tensor;
-const TensorMathError = @import("errorHandler").TensorMathError;
-const ErrorHandler = @import("errorHandler");
+const zant = @import("zant");
+const pkgAllocator = zant.utils.allocator;
+const TensMath = zant.core.tensor.math_standard;
+const Tensor = zant.core.tensor.Tensor;
+const TensorMathError = zant.utils.error_handler.TensorMathError;
+const ErrorHandler = zant.utils.error_handler;
 
 test "MatMul 2x2" {
     std.debug.print("\n     test:MatMul 2x2", .{});

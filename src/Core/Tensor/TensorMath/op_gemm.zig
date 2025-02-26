@@ -1,8 +1,9 @@
 const std = @import("std");
-const Tensor = @import("tensor").Tensor;
-const TensorError = @import("errorHandler").TensorError;
-const TensorMathError = @import("errorHandler").TensorMathError;
-const pkg_allocator = @import("pkgAllocator").allocator;
+const zant = @import("../../../zant.zig");
+const Tensor = zant.core.tensor.Tensor;
+const TensorError = zant.utils.error_handler.TensorError;
+const TensorMathError = zant.utils.error_handler.TensorMathError;
+const pkg_allocator = zant.utils.allocator.allocator;
 const TensMath = @import("tensor_math_standard.zig");
 const LeanTensMath = @import("tensor_math_lean.zig");
 

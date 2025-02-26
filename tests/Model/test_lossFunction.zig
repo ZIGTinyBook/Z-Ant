@@ -1,14 +1,16 @@
 const std = @import("std");
-const Tensor = @import("tensor").Tensor;
-const TensMath = @import("tensor_m");
+const zant = @import("zant");
+const Tensor = zant.core.tensor.Tensor;
+const TensMath = zant.core.tensor.math_standard;
 
-const Loss = @import("loss");
-const LossType = @import("loss").LossType;
-const MSELoss = @import("loss").MSELoss;
-const CCELoss = @import("loss").CCELoss;
-const LossError = @import("errorHandler").LossError;
-const TensorError = @import("errorHandler").TensorError;
-const pkgAllocator = @import("pkgAllocator");
+const Loss = zant.model.loss_function;
+const LossType =Loss.LossType;
+const MSELoss =Loss.MSELoss;
+const CCELoss =Loss.CCELoss;
+const error_handler = zant.utils.error_handler;
+const LossError = error_handler.LossError;
+const TensorError = error_handler.TensorError;
+const pkgAllocator = zant.utils.allocator;
 
 test "tests description" {
     std.debug.print("\n--- Running loss_function tests\n", .{});

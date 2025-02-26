@@ -1,10 +1,15 @@
 const std = @import("std");
-const Tensor = @import("tensor").Tensor;
-const Convert = @import("typeC");
+const zant = @import("../zant.zig");
+
+const Tensor = zant.core.tensor.Tensor;
+const Convert = zant.utils.type_converter;
 //import error library
-const TensorError = @import("errorHandler").TensorError;
-const TensorMathError = @import("errorHandler").TensorMathError;
-const LossError = @import("errorHandler").LossError;
+const error_handler = zant.utils.error_handler;
+const TensorError = error_handler.TensorError;
+const TensorMathError = error_handler.TensorMathError;
+const LossError = error_handler.LossError;
+
+const pkg_allocator = zant.utils.allocator.allocator;
 
 /// possible Types of Loss function.
 /// Every time a new loss function is added you must update the enum
@@ -251,9 +256,8 @@ pub fn CCELoss() type {
                 var res: f64 = 0.0;
                 const epsilon = 1e-15; // Smaller epsilon for more precision
 
-                const allocator = @import("pkgAllocator").allocator;
-                const get_location = try allocator.alloc(usize, location.len);
-                defer allocator.free(get_location);
+                const get_location = try pkg_allocator.alloc(usize, location.len);
+                defer pkg_allocator.free(get_location);
 
                 for (0..get_location.len) |i| {
                     get_location[i] = location[i];
@@ -273,8 +277,8 @@ pub fn CCELoss() type {
                     res -= (target * log);
                 }
 
-                const out_location = try allocator.alloc(usize, predictions.shape.len - 1);
-                defer allocator.free(out_location);
+                const out_location = try pkg_allocator.alloc(usize, predictions.shape.len - 1);
+                defer pkg_allocator.free(out_location);
 
                 for (0..out_location.len) |i| {
                     out_location[i] = location[i];

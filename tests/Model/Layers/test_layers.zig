@@ -1,5 +1,6 @@
 const std = @import("std");
-const layer_ = @import("layer");
+const zant = @import("zant");
+const layer_ = zant.model.layer;
 const Layer = layer_.Layer;
 const DenseLayer = layer_.DenseLayer;
 const ConvolutionalLayer = layer_.ConvolutionalLayer;
@@ -8,14 +9,15 @@ const ActivationLayer = layer_.ActivationLayer;
 const BatchNormLayer = layer_.BatchNormLayer;
 const PoolingLayer = layer_.PoolingLayer;
 const PoolingType = layer_.poolingLayer.PoolingType;
-const Tensor = @import("tensor").Tensor;
-const TensorMath = @import("tensor_m");
-const LayerError = @import("errorHandler").LayerError;
-const TensorError = @import("errorHandler").TensorError;
-const TensorMathError = @import("errorHandler").TensorMathError;
-const tensor = @import("tensor");
-const ActivationType = @import("layer").ActivationType;
-const pkg_allocator = @import("pkgAllocator");
+const Tensor = zant.core.tensor.Tensor;
+const TensorMath = zant.core.tensor.math_standard;
+const error_handler = zant.utils.error_handler;
+const LayerError = error_handler.LayerError;
+const TensorError = error_handler.TensorError;
+const TensorMathError = error_handler.TensorMathError;
+const tensor = zant.core.tensor;
+const ActivationType = zant.model.layer.ActivationType;
+const pkg_allocator = zant.utils.allocator;
 
 test "Layer test description" {
     std.debug.print("\n--- Running Layer tests\n", .{});

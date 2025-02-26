@@ -1,13 +1,15 @@
 const std = @import("std");
-const Tensor = @import("tensor").Tensor;
-const ModelOnnx = @import("onnx").ModelProto;
-const DataType = @import("onnx").DataType;
+const zant = @import("zant");
+const Tensor = zant.tensor.Tensor;
+const onnx = zant.onnx;
+const ModelOnnx = onnx.ModelProto;
+const DataType = onnx.DataType;
 //--- proto
-const TensorProto = @import("onnx").TensorProto;
-const NodeProto = @import("onnx").NodeProto;
-const GraphProto = @import("onnx").GraphProto;
-const AttributeProto = @import("onnx").AttributeProto;
-const allocator = @import("pkgAllocator").allocator;
+const TensorProto = onnx.TensorProto;
+const NodeProto = onnx.NodeProto;
+const GraphProto = onnx.GraphProto;
+const AttributeProto = onnx.AttributeProto;
+const allocator = zant.utils.allocator.allocator;
 
 //--- other
 const utils = @import("codeGen_utils.zig");

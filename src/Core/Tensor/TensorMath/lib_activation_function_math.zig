@@ -1,10 +1,13 @@
 const std = @import("std");
-const Tensor = @import("tensor").Tensor; // Import Tensor type
-const pkg_allocator = @import("pkgAllocator").allocator;
-const TensorMathError = @import("errorHandler").TensorMathError;
-const TensorError = @import("errorHandler").TensorError;
-const Converter = @import("typeC");
-const ArchitectureError = @import("errorHandler").ArchitectureError;
+const zant = @import("../../../zant.zig");
+
+const Tensor = zant.core.tensor.Tensor; // Import Tensor type
+const pkg_allocator = zant.utils.allocator.allocator;
+const error_handler = zant.utils.error_handler;
+const TensorMathError = error_handler.TensorMathError;
+const TensorError = error_handler.TensorError;
+const ArchitectureError = error_handler.ArchitectureError;
+const Converter = zant.utils.type_converter;
 
 /// ReLU (Rectified Linear Unit).
 /// It outputs the input directly if it's positive, but returns zero for any negative input.

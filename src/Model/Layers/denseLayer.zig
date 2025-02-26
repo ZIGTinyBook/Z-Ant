@@ -1,8 +1,10 @@
 const std = @import("std");
-const tensor = @import("tensor");
-const TensMath = @import("tensor_m");
-const Layer = @import("Layer");
-const LayerError = @import("errorHandler").LayerError;
+
+const zant = @import("../../zant.zig");
+const tensor = zant.core.tensor;
+const TensMath = zant.core.tensor.math_standard;
+const Layer = zant.model.layer;
+const LayerError = zant.utils.error_handler.LayerError;
 
 /// Function to create a DenseLayer struct in future it will be possible to create other types of layers like convolutional, LSTM etc.
 /// The DenseLayer is a fully connected layer, it has a weight matrix and a bias vector.

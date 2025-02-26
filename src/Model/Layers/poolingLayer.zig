@@ -1,10 +1,11 @@
 const std = @import("std");
-const tensor = @import("Tensor");
-const TensMath = @import("tensor_m");
-const Layer = @import("Layer");
-const Architectures = @import("architectures").Architectures;
-const LayerError = @import("errorHandler").LayerError;
-const TensorError = @import("errorHandler").TensorError;
+
+const zant = @import("../../zant.zig");
+const tensor = zant.core.tensor;
+const TensMath = zant.core.tensor.math_standard;
+const Layer = zant.model.layer;
+const LayerError = zant.utils.error_handler.LayerError;
+const TensorError = zant.utils.error_handler.TensorError;
 
 pub const PoolingType = enum {
     Max,

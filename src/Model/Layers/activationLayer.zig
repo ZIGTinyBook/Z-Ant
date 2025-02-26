@@ -1,8 +1,9 @@
 const std = @import("std");
-const tensor = @import("tensor");
-const TensMath = @import("tensor_m");
-const Layer = @import("Layer");
-const LayerError = @import("errorHandler").LayerError;
+const zant = @import("../../zant.zig");
+const tensor = zant.core.tensor;
+const TensMath = zant.core.tensor.math_standard;
+const Layer = zant.model.layer;
+const LayerError = zant.utils.error_handler.LayerError;
 
 pub const ActivationType = enum {
     ReLU,

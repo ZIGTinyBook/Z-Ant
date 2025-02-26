@@ -6,10 +6,12 @@
 //!    Standard Deviation and Variance: Statistical operations.
 //!
 const std = @import("std");
-const Tensor = @import("tensor").Tensor; // Import Tensor type
-const pkg_allocator = @import("pkgAllocator").allocator;
-const TensorMathError = @import("errorHandler").TensorMathError;
-const Converter = @import("typeC");
+const zant = @import("../../../zant.zig");
+
+const Tensor = zant.core.tensor.Tensor; // Import Tensor type
+const pkg_allocator = zant.utils.allocator.allocator;
+const TensorMathError = zant.utils.error_handler.TensorMathError;
+const Converter = zant.utils.type_converter;
 
 /// Performs the mean of a given tensor. It is a reduction operation, collapsing the whole tenosr into a single value.
 pub fn mean(comptime T: anytype, tensor: *Tensor(T)) f32 {

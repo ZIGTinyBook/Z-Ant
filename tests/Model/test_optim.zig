@@ -1,11 +1,11 @@
 const std = @import("std");
-const tensor = @import("tensor");
-const layer = @import("layer");
-const denselayer = layer.denseLayer;
-const Model = @import("model");
-const Optim = @import("optim");
-const ActivationType = @import("activation_function").ActivationType;
-const pkgAllocator = @import("pkgAllocator");
+const zant = @import("zant");
+const tensor = zant.core.tensor;
+const layer = zant.model.layer;
+const Model = zant.model.Model;
+const Optim = zant.model.optimizer;
+const ActivationType = layer.ActivationType;
+const pkgAllocator = zant.utils.allocator;
 
 //Test that it runs and prints the initial and updated weights must test with back prop
 test "SGD Optimizer No Update with Zero Gradients (Print Only)" {
@@ -20,7 +20,7 @@ test "SGD Optimizer No Update with Zero Gradients (Print Only)" {
     };
     try model.init();
 
-    var dense_layer = denselayer.DenseLayer(f64){
+    var dense_layer = layer.DenseLayer(f64){
         .weights = undefined,
         .bias = undefined,
         .input = undefined,
@@ -31,7 +31,7 @@ test "SGD Optimizer No Update with Zero Gradients (Print Only)" {
         .b_gradients = undefined,
         .allocator = undefined,
     };
-    var layer1_ = denselayer.DenseLayer(f64).create(&dense_layer);
+    var layer1_ = layer.DenseLayer(f64).create(&dense_layer);
     try layer1_.init(
         &allocator,
         @constCast(&struct {

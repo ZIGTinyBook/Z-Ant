@@ -1,5 +1,6 @@
 const std = @import("std");
-const Tensor = @import("tensor").Tensor;
+const zant = @import("../zant.zig");
+const Tensor = zant.core.tensor.Tensor;
 
 pub const NormalizationType = enum {
     null,

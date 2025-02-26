@@ -1,8 +1,9 @@
 const std = @import("std");
-const DataProc = @import("dataprocessor");
-const NormalizType = @import("dataprocessor").NormalizationType;
-const Tensor = @import("tensor").Tensor;
-const pkgAllocator = @import("pkgAllocator");
+const zant = @import("zant");
+const DataProc = zant.data_handler.data_processor;
+const NormalizType = DataProc.NormalizationType;
+const Tensor = zant.core.tensor.Tensor;
+const pkgAllocator = zant.utils.allocator;
 
 test "normalize float" {
     std.debug.print("\n     test: normalize float", .{});

@@ -4,7 +4,9 @@
 //! It contains also the possibility to preprocess data and to shuffle the data.
 
 const std = @import("std");
-const tensor = @import("tensor");
+const zant = @import("../zant.zig");
+const tensor = zant.core.tensor;
+
 fn MagicalReturnType(comptime DataType: type, comptime dim_count: usize) type {
     return if (dim_count == 1) []DataType else []MagicalReturnType(DataType, dim_count - 1);
 }

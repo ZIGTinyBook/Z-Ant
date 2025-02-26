@@ -1,10 +1,13 @@
 const std = @import("std");
-const pkgAllocator = @import("pkgAllocator");
-const TensMath = @import("tensor_m");
-const Tensor = @import("tensor").Tensor;
-const TensorMathError = @import("errorHandler").TensorMathError;
-const TensorError = @import("errorHandler").TensorError;
-const ErrorHandler = @import("errorHandler");
+const zant = @import("zant");
+
+const pkgAllocator = zant.utils.allocator;
+const TensMath = zant.core.tensor.math_standard;
+const Tensor = zant.core.tensor.Tensor;
+const error_handler = zant.utils.error_handler;
+const TensorMathError = error_handler.TensorMathError;
+const TensorError = error_handler.TensorError;
+const ErrorHandler = error_handler;
 
 // TODO: add test for multiple batch/channel
 
