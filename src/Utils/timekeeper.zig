@@ -1,5 +1,7 @@
 const std = @import("std");
-const Tensor = @import("../Core/Tensor/tensor.zig").Tensor;
+
+const zant = @import("zant");
+const Tensor = zant.core.tensor.Tensor;
 
 /// Returns the duration of inputFunction's execution
 pub fn timekeeper(comptime T: type, inputFunction: T) i128 {

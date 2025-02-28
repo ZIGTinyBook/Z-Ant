@@ -1,9 +1,11 @@
 const std = @import("std");
-const DataType = @import("onnx").DataType;
-const GraphProto = @import("onnx").GraphProto;
-const NodeProto = @import("onnx").NodeProto;
-const TensorProto = @import("onnx").TensorProto;
-const allocator = @import("pkgAllocator").allocator;
+const zant = @import("zant");
+const onnx = zant.onnx;
+const DataType = onnx.DataType;
+const GraphProto = onnx.GraphProto;
+const NodeProto = onnx.NodeProto;
+const TensorProto = onnx.TensorProto;
+const allocator = zant.utils.allocator.allocator;
 const ReadyNode = @import("globals.zig").ReadyNode;
 const ReadyTensor = @import("globals.zig").ReadyTensor;
 

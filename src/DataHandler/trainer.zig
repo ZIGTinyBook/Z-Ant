@@ -3,21 +3,23 @@
 //! or TrainDataLoader(), more specific for training data loaded from a file. This last one has been well tested for MNIST.
 
 const std = @import("std");
-const Tensor = @import("tensor");
-const TensMath = @import("tensor_m");
-const Model = @import("model").Model;
 
-const Loss = @import("loss");
-const Optim = @import("optim");
+const zant = @import("../zant.zig");
 
-const DataLoader = @import("dataloader").DataLoader;
-const DataProc = @import("dataprocessor");
+const Tensor = zant.core.tensor;
+const TensMath = zant.core.tensor.math_standard;
+const Model = zant.model.Model;
 
-const LossType = @import("loss").LossType;
-const NormalizType = @import("dataprocessor").NormalizationType;
+const Loss = zant.model.loss_function;
+const LossType = Loss.LossType;
+const Optim = zant.model.optim;
 
-const DenseLayer = @import("layer").DenseLayer;
-const ConvolutionalLayer = @import("layer").ConvolutionalLayer;
+const DataLoader = zant.data_handler.data_loader.DataLoader;
+const DataProc = zant.data_handler.data_processor;
+const NormalizType = zant.data_handler.data_processor.NormalizationType;
+
+const DenseLayer = zant.model.layer.DenseLayer;
+const ConvolutionalLayer = zant.model.layer.ConvolutionalLayer;
 
 /// Defines the type of trainer used for model training.
 ///

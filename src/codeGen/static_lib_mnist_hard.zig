@@ -1,9 +1,10 @@
 const std = @import("std");
-const Tensor = @import("tensor").Tensor;
-const tensMath = @import("tensor_math");
+const zant = @import("zant");
+const Tensor = zant.core.tensor.Tensor;
+const tensMath = zant.core.tensor.math_standard;
 const AutoPadType = tensMath.AutoPadType;
 const utils = @import("codeGen_utils.zig");
-const pkgAllocator = @import("pkgAllocator");
+const pkgAllocator = zant.utils.allocator;
 const allocator = pkgAllocator.allocator;
 
 fn setAllocator(tensor: *Tensor(T), alloc: *const std.mem.Allocator) void {

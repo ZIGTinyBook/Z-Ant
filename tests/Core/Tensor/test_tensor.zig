@@ -1,8 +1,9 @@
 const std = @import("std");
-const Tensor = @import("tensor").Tensor;
+const zant = @import("zant");
+const Tensor = zant.core.tensor.Tensor;
 //import error library
-const TensorError = @import("errorHandler").TensorError;
-const pkgAllocator = @import("pkgAllocator");
+const TensorError = zant.utils.error_handler.TensorError;
+const pkgAllocator = zant.utils.allocator;
 
 const expect = std.testing.expect;
 

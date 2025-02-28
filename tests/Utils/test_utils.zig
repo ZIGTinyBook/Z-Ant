@@ -1,5 +1,6 @@
 const std = @import("std");
-const conv = @import("typeConverter");
+const zant = @import("zant");
+const conv = zant.utils.type_converter;
 
 test {
     _ = @import("test_modelExport.zig");

@@ -1,8 +1,9 @@
 const std = @import("std");
-const Tensor = @import("tensor").Tensor;
-const TensorMath = @import("tensor_m");
-const ActivType = @import("layer").ActivationType;
-const pkgAllocator = @import("pkgAllocator");
+const zant = @import("zant");
+const Tensor = zant.core.tensor.Tensor;
+const TensorMath = zant.core.tensor.math_standard;
+const ActivType = zant.model.layer.ActivationType;
+const pkgAllocator = zant.utils.allocator;
 
 test "tests description" {
     std.debug.print("\n--- Running activation_function tests\n", .{});

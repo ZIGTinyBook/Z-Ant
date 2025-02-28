@@ -1,9 +1,9 @@
 const std = @import("std");
-
-const onnx = @import("onnx");
-const Tensor = @import("tensor").Tensor;
-const tensorMath = @import("tensor_math");
-const allocator = @import("pkgAllocator").allocator;
+const zant = @import("zant");
+const onnx = zant.onnx;
+const Tensor = zant.core.tensor.Tensor;
+const tensorMath = zant.core.tensor.math_standard;
+const allocator = zant.utils.allocator.allocator;
 const codeGen = @import("codeGen_skeleton.zig");
 const codeGen_utils = @import("codeGen_utils.zig");
 const codeGen_init = @import("codeGen_initializers.zig");

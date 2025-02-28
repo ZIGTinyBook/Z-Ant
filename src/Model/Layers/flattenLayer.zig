@@ -1,8 +1,10 @@
 const std = @import("std");
-const Tensor = @import("Tensor");
-const TensMath = @import("tensor_m");
-const Layer = @import("Layer");
-const LayerError = @import("errorHandler").LayerError;
+
+const zant = @import("../../zant.zig");
+const Tensor = zant.core.tensor;
+const TensMath = zant.core.tensor.math_standard;
+const Layer = zant.model.layer;
+const LayerError = zant.utils.error_handler.LayerError;
 
 /// Represents a flattening layer in a neural network.
 /// This layer reshapes a multidimensional input tensor into a one-dimensional output tensor,

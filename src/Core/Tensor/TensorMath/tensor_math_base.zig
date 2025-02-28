@@ -1,8 +1,4 @@
 const std = @import("std");
-const Tensor = @import("tensor").Tensor;
-const TensorError = @import("errorHandler").TensorError;
-const TensorMathError = @import("errorHandler").TensorMathError;
-const pkg_allocator = @import("pkgAllocator").allocator;
 
 // Export common tensor math operations that are shared between standard and lean implementations
 pub const lib_shape_math = @import("lib_shape_math.zig");

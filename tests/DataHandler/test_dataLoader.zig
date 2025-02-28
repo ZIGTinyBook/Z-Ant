@@ -1,7 +1,8 @@
 const std = @import("std");
-const DataLoader = @import("dataloader").DataLoader;
+const zant = @import("zant");
+const DataLoader = zant.data_handler.data_loader.DataLoader;
 const fs = std.fs;
-const pkgAllocator = @import("pkgAllocator");
+const pkgAllocator = zant.utils.allocator;
 
 test "tests description" {
     std.debug.print("\n--- Running dataLoader tests\n", .{});

@@ -1,7 +1,8 @@
 const std = @import("std");
-const tensor = @import("tensor");
+const zant = @import("zant");
+const tensor = zant.core.tensor;
 //--- layers
-const layer = @import("layer");
+const layer = zant.model.layer;
 const DenseLayer = layer.DenseLayer;
 const ConvolutionalLayer = layer.ConvolutionalLayer;
 const FlattenLayer = layer.FlattenLayer;
@@ -9,14 +10,14 @@ const PoolingLayer = layer.PoolingLayer;
 const PoolingType = layer.poolingLayer.PoolingType;
 const ActivationLayer = layer.ActivationLayer;
 //--- other
-const Model = @import("model").Model;
-const loader = @import("dataloader");
+const Model = zant.model.Model;
+const loader = zant.data_handler.data_loader;
 const ActivationType = layer.ActivationType;
-const LossType = @import("loss").LossType;
-const Trainer = @import("trainer");
-const BatchNormLayer = @import("batchNormLayer").BatchNormLayer;
-const onnx = @import("onnx");
-const codeGen = @import("codeGen");
+const LossType = zant.model.loss_function.LossType;
+const Trainer = zant.data_handler.trainer;
+const BatchNormLayer = layer.BatchNormLayer;
+const onnx = zant.onnx;
+const codeGen = zant.codeGen;
 
 test "Test single epoch training with simplified CNN" {
     var allocator = std.testing.allocator;

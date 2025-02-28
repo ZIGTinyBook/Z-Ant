@@ -9,13 +9,15 @@
 //!
 //!
 //!
-const tensor_m = @import("tensor_m");
+
+const zant = @import("../../../zant.zig");
+const tensor_m = zant.core.tensor.math_standard;
 pub usingnamespace tensor_m;
 
 const std = @import("std");
-const Tensor = @import("tensor").Tensor;
-const pkg_allocator = @import("pkgAllocator").allocator;
-const tensor = @import("tensor");
+const tensor = zant.core.tensor;
+const Tensor = tensor.Tensor;
+const pkg_allocator = zant.utils.allocator;
 
 pub var log_function: ?*const fn ([*c]u8) callconv(.C) void = null;
 

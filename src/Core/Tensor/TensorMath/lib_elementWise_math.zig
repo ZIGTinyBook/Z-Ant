@@ -6,13 +6,15 @@
 //!    Rounding Functions: Floor, ceil, round, truncation.
 
 const std = @import("std");
-const Tensor = @import("tensor").Tensor; // Import Tensor type
-const pkg_allocator = @import("pkgAllocator").allocator;
-const TensorMathError = @import("errorHandler").TensorMathError;
-const TensorError = @import("errorHandler").TensorError;
-const TypeError = @import("errorHandler").TypeError;
-const Converter = @import("typeC");
-const ArchitectureError = @import("errorHandler").ArchitectureError;
+const zant = @import("../../../zant.zig");
+
+const Tensor = zant.core.tensor.Tensor; // Import Tensor type
+const pkg_allocator = zant.utils.allocator.allocator;
+const error_handler = zant.utils.error_handler;
+const TensorMathError = error_handler.TensorMathError;
+const TensorError = error_handler.TensorError;
+const ArchitectureError = error_handler.ArchitectureError;
+const Converter = zant.utils.type_converter;
 
 /// Function that add the bias for all the features in the tensor
 pub fn add_bias(comptime T: anytype, tensor: *Tensor(T), bias: *Tensor(T)) !void {

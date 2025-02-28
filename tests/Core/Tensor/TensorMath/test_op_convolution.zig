@@ -1,8 +1,9 @@
 const std = @import("std");
-const pkgAllocator = @import("pkgAllocator");
-const TensMath = @import("tensor_m");
-const Tensor = @import("tensor").Tensor;
-const TensorMathError = @import("errorHandler").TensorMathError;
+const zant = @import("zant");
+const pkgAllocator = zant.utils.allocator;
+const TensMath = zant.core.tensor.math_standard;
+const Tensor = zant.core.tensor.Tensor;
+const TensorMathError = zant.utils.error_handler.TensorMathError;
 
 test "Convolution 4D Input with 2x2x2x2 Kernel shape" {
     std.debug.print("\n     test: Convolution 4D Input with 2x2x2x2 Kernel shape\n", .{});

@@ -9,10 +9,13 @@
 //!    Flip: used to flip the kernel in some convolution operations.
 
 const std = @import("std");
-const Tensor = @import("tensor").Tensor; // Import Tensor type
-const pkg_allocator = @import("pkgAllocator").allocator;
-const TensorMathError = @import("errorHandler").TensorMathError;
-const TensorError = @import("errorHandler").TensorError;
+const zant = @import("../../../zant.zig");
+
+const Tensor = zant.core.tensor.Tensor;
+const TensorError = zant.utils.error_handler.TensorError;
+const TensorMathError = zant.utils.error_handler.TensorMathError;
+
+const pkg_allocator = zant.utils.allocator.allocator;
 
 /// Resize the input tensor using interpolation.
 /// Supports 'nearest', 'linear', and 'cubic' interpolation modes.

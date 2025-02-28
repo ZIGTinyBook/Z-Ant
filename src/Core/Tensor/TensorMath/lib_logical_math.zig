@@ -4,8 +4,10 @@
 //! - Check operation
 
 const std = @import("std");
-const Tensor = @import("tensor").Tensor;
-const TensorError = @import("errorHandler").TensorError;
+const zant = @import("../../../zant.zig");
+
+const Tensor = zant.core.tensor.Tensor;
+const TensorError = zant.utils.error_handler.TensorError;
 
 /// Returns true if the Tensor is one-hot encoded
 fn isOneHot(comptime T: anytype, t: *Tensor(T)) !bool {

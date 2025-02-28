@@ -1,11 +1,12 @@
 const std = @import("std");
-const tensor = @import("tensor");
-const Layer = @import("layer");
+const zant = @import("zant");
+const tensor = zant.core.tensor;
+const Layer = zant.model.layer;
 const DenseLayer = Layer.DenseLayer;
-const Model = @import("model").Model;
-const ActivationType = @import("layer").ActivationType;
-const Trainer = @import("trainer");
-const pkgAllocator = @import("pkgAllocator");
+const Model = zant.model.Model;
+const ActivationType = Layer.ActivationType;
+const Trainer = zant.data_handler.trainer;
+const pkgAllocator = zant.utils.allocator;
 
 test "Model with multiple Denselayers forward test" {
     std.debug.print("\n     test: Model with multiple layers forward test", .{});
