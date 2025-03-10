@@ -11,6 +11,7 @@ pub const TensorProto = @import("tensorProto.zig").TensorProto;
 pub const NodeProto = @import("nodeProto.zig").NodeProto;
 pub const GraphProto = @import("graphProto.zig").GraphProto;
 pub const ModelProto = @import("modelProto.zig").ModelProto;
+pub const StringStringEntryProto = @import("stringStringEntryProto.zig").StringStringEntryProto;
 
 var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 var printingAllocator = std.heap.ArenaAllocator.init(gpa.allocator());
